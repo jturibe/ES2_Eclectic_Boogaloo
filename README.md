@@ -11,8 +11,8 @@ Main functions:
 without overshooting
 2. Spin at a defined angular velocity
 3. Execute a bitcoin mining kernel in the background
-4. Make the motor play a tune as it works
-• https://www.youtube.com/watch?v=mtUjIE3IHTA
+4. Make the motor play a tune as it works  
+  • https://www.youtube.com/watch?v=mtUjIE3IHTA
 
 Additional specifications:
 1. Respond to commands given over the serial port
