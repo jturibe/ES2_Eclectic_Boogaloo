@@ -1,5 +1,6 @@
 #include "mbed.h"
-#include "hash/SHA256.h"
+#include "SHA256.h"
+#include "Timer.h"
 
 //Photointerrupter input pins
 #define I1pin D3
@@ -72,7 +73,7 @@ DigitalOut L3H(L3Hpin);
 DigitalOut TP1(TP1pin);
 PwmOut MotorPWM(PWMpin);
 
-uint8_t sequence[] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
+uint8_t sequence[64] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
 0x20,0x53,0x79,0x73,0x74,0x65,0x6D,0x73,
 0x20,0x61,0x72,0x65,0x20,0x66,0x75,0x6E,
 0x20,0x61,0x6E,0x64,0x20,0x64,0x6F,0x20,
@@ -135,6 +136,7 @@ void check_motor_output_flow(){
 int main() {
     orState = 0;    //Rotor offset at motor state 0
     int hash_count = 0;
+    SHA256 algo;
     const int32_t PWM_PRD = 2500;
     MotorPWM.period_us(PWM_PRD);
     MotorPWM.pulsewidth_us(PWM_PRD);
@@ -163,7 +165,7 @@ int main() {
     t.start();
     pc.printf("AFTER T.START\n");
     while (1) {
-        SHA256::computeHash(hash_result, sequence, 64);
+        algo.computeHash(hash_result, sequence, 64);
         pc.printf("AFTER compute hash\n");
         if ((hash_result[0]==0) && (hash_result[1]==0)) {
             pc.printf("Sucessful nonce, Integer rep: %d \n", *nonce);
@@ -171,13 +173,13 @@ int main() {
             hash_count++;
         }
         pc.printf("AFTER hash result\n");
-        if (t.read() >= 1000){
+        if (t.read() >= 1){
             pc.printf("Current Computation Rate: %d Hashes per second\n",hash_count);
             t.reset();
             hash_count = 0;
         }
         pc.printf("AFTER time eval\n");
-        *nonce+=1;
+        (*nonce)++;
         pc.printf("AFTER nonce increment\n");
     }
 }
