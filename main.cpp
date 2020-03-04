@@ -81,7 +81,7 @@ uint64_t motorPosition;
 
 Thread out_comms_thread;
 Thread in_comms_thread;
-Thread motorCtrlT (osPriorityNormal,1024);
+Thread motorCtrlT(osPriorityNormal,1024);
 
 volatile uint64_t newKey;
 Mutex newKey_mutex;
@@ -187,8 +187,13 @@ void motorControlISR(){
     int8_t intState = readRotorState();
     motorOut((intState-orState+lead+6)%6); //+6 to make sure the remainder is positive
     if (intState == 4 && intStateOld == 3) TP1 = !TP1;
-    int difference = intState - intStateOld;
-    motorPosition += difference;
+    if(intState - intStateOld == 5){
+        motorPosition--;
+    } else if (intState - intStateOld == -5){
+        motorPosition++;
+    } else{
+        motorPosition += intState - intStateOld;
+    }
     intStateOld = intState;
 }
 /////////////////////////////Communication
@@ -210,27 +215,29 @@ void motorCtrlTick(){
  }
 
 void motorCtrlFn(){
-    static uint64_t old_position = motorPosition;
+    uint64_t old_position = motorPosition;
     Ticker motorCtrlTicker;
     Timer timer;
     float mult;
-    int difference;
+    float difference;
     float velocity;
+    int iter = 0;
     motorCtrlTicker.attach_us(&motorCtrlTick,100000);
     timer.start();
-    int iter = 0;
     while(1){
         motorCtrlT.signal_wait(0x1);
-        mult = 1/(timer.read_ms()/1000);
+        mult = 1/timer.read();
         timer.reset();
         difference = motorPosition - old_position;
         velocity = difference*mult;
         if(iter == 9){
             char message[100];
-            sprintf(message,"Motor Position: %d\n\rMotor Velocity: %f\n\r",motorPosition,velocity);
+            sprintf(message,"Motor Position: %d\n\rMotor Velocity: %f\n\rMult: %f\n\r",motorPosition,velocity,mult);
             putMessage(message);
+            iter = 0;
         }
         iter++;
+        old_position = motorPosition;
     }
 }
 
@@ -306,3 +313,4 @@ int main() {
         }
         (*nonce)++;
     }
+}

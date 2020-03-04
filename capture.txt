@@ -1,35 +1,5 @@
 Hello
-Rotor origin: 1
-Current Computation Rate: 6188 Hashes per second
-Using key: 0
-Current Computation Rate: 5975 Hashes per second
-Using key: 0
-Current Computation Rate: 5942 Hashes per second
-Using key: 0
-Current Computation Rate: 5941 Hashes per second
-Using key: 0
-Current Computation Rate: 5940 Hashes per second
-UsiCurrent Computation Rate: 5944 Hashes per second
-Using key: 0
-Current Computation Rate: 5945 Hashes per second
-Using key: 0
-Current Computation Rate: 5944 Hashes per second
-Using key: 0
-Current Computation Rate: 5944 Hashes per second
-Using key: 0
-Current Computation Rate: 5943 Hashes per second
-Using key: 0
-Current Computation Rate: 5942 Hashes per second
-Using key: 0
-Current Computation Rate: 5941 Hashes per second
-Using key: 0
-Current Computation Rate: 5940 Hashes per second
-Using key: 0
-Current Computation Rate: 5939 Hashes per second
-Using key: 0
-Current Computation Rate: 5939 Hashes per second
-Using key: 0
-Current Computation Rate: 5938 Hashes per second
-Using key: 0
-Current Computation Rate: 5939 Hashes per second
-Using key: 0
+Motor Position: 0
+Motor Velocity: 0.000000
+Rotor origin: 3
+Successful nonce, Hex rep: 0x87CF
