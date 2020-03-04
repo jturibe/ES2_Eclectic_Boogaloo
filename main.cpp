@@ -54,7 +54,8 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 //const int8_t stateMap[] = {0x07,0x01,0x03,0x02,0x05,0x00,0x04,0x07}; //Alternative if phase order of input or drive is reversed
 
 //Phase lead to make motor spin
-const int8_t lead = 2;  //2 for forwards, -2 for backwards
+int8_t lead = 2;  //2 for forwards, -2 for backwards
+const int32_t PWM_PRD = 2000;
 
 int8_t orState;
 
@@ -78,6 +79,7 @@ DigitalOut TP1(TP1pin);
 PwmOut MotorPWM(PWMpin);
 volatile uint64_t pwmTorque;
 uint64_t motorPosition;
+static uint8_t k_p = 25;
 
 Thread out_comms_thread;
 Thread in_comms_thread;
@@ -85,6 +87,8 @@ Thread motorCtrlT(osPriorityNormal,1024);
 
 volatile uint64_t newKey;
 Mutex newKey_mutex;
+
+float y_s = PWM_PRD/2;
 
 typedef struct {
   char* pure_mssg;
@@ -98,7 +102,7 @@ Mail<mail_t, 16> mail_box;
 
 Mail<uint8_t, 24> inCharQ;
 
-
+float maxVelocity = 100;
 
 void putMessage(char* mssg){
     if(!mail_box.full()){
@@ -129,6 +133,10 @@ void input_thread(){
                     newKey_mutex.lock();
                     sscanf(input.c_str(),"K%x",&newKey);
                     newKey_mutex.unlock();
+                    break;
+
+                case 'V':
+                    sscanf(input.c_str(),"V%x",&maxVelocity);
                     break;
 
                 case 't':
@@ -165,6 +173,7 @@ void motorOut(int8_t driveState){
     if (driveOut & 0x08) L2H = 0;
     if (driveOut & 0x10) L3L = 1;
     if (driveOut & 0x20) L3H = 0;
+
 }
 
     // Convert photointerrupter inputs to a rotor state
@@ -182,9 +191,19 @@ int8_t motorHome() {
     return readRotorState();
 }
 
+void setVelocity(float y_s){
+    lead = y_s < 0 ? -2:2;
+    y_s = abs(y_s) > PWM_PRD ? PWM_PRD : y_s;
+
+    MotorPWM.pulsewidth_us(abs(y_s));
+}
+
 void motorControlISR(){
     static int8_t intStateOld;
     int8_t intState = readRotorState();
+
+    setVelocity(y_s);
+
     motorOut((intState-orState+lead+6)%6); //+6 to make sure the remainder is positive
     if (intState == 4 && intStateOld == 3) TP1 = !TP1;
     if(intState - intStateOld == 5){
@@ -212,7 +231,9 @@ void output_thread() {
 
 void motorCtrlTick(){
     motorCtrlT.signal_set(0x1);
- }
+}
+
+
 
 void motorCtrlFn(){
     uint64_t old_position = motorPosition;
@@ -226,13 +247,13 @@ void motorCtrlFn(){
     timer.start();
     while(1){
         motorCtrlT.signal_wait(0x1);
-        mult = 1/timer.read();
-        timer.reset();
         difference = motorPosition - old_position;
-        velocity = difference*mult;
+        velocity = (difference/6)/timer.read();
+        timer.reset();
+        y_s = k_p*(maxVelocity - velocity);
         if(iter == 9){
             char message[100];
-            sprintf(message,"Motor Position: %d\n\rMotor Velocity: %f\n\rMult: %f\n\r",motorPosition,velocity,mult);
+            sprintf(message,"Motor Position: %d\n\rMotor Velocity: %f\n\r",motorPosition,velocity);
             putMessage(message);
             iter = 0;
         }
@@ -240,6 +261,9 @@ void motorCtrlFn(){
         old_position = motorPosition;
     }
 }
+
+
+
 
 /////////////////////////// Main
 int main() {
@@ -257,7 +281,6 @@ int main() {
     Timer t;
     int hash_count = 0;
     SHA256 algo;
-    const int32_t PWM_PRD = 2000;
     MotorPWM.period_us(PWM_PRD);
     MotorPWM.pulsewidth_us(PWM_PRD/2);
     out_comms_thread.start(output_thread);
