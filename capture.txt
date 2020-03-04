@@ -1,6 +1,21 @@
-Current Computation Rate: 5943 Hashes per second
+Hello
+Rotor origin: 1
+Current Computation Rate: 6188 Hashes per second
 Using key: 0
-Current Computation Rate: 5943 Hashes per second
+Current Computation Rate: 5975 Hashes per second
+Using key: 0
+Current Computation Rate: 5942 Hashes per second
+Using key: 0
+Current Computation Rate: 5941 Hashes per second
+Using key: 0
+Current Computation Rate: 5940 Hashes per second
+UsiCurrent Computation Rate: 5944 Hashes per second
+Using key: 0
+Current Computation Rate: 5945 Hashes per second
+Using key: 0
+Current Computation Rate: 5944 Hashes per second
+Using key: 0
+Current Computation Rate: 5944 Hashes per second
 Using key: 0
 Current Computation Rate: 5943 Hashes per second
 Using key: 0
@@ -10,15 +25,11 @@
 Using key: 0
 Current Computation Rate: 5940 Hashes per second
 Using key: 0
-Current Computation Rate: 5938 Hashes per second
+Current Computation Rate: 5939 Hashes per second
+Using key: 0
+Current Computation Rate: 5939 Hashes per second
 Using key: 0
 Current Computation Rate: 5938 Hashes per second
 Using key: 0
-Current Computation Rate: 5937 Hashes per second
-Using key: 0
-Current Computation Rate: 5937 Hashes per second
-Using key: 0
-Current Computation Rate: 5937 Hashes per second
-Using key: 0
-Current Computation Rate: 5936 Hashes per second
+Current Computation Rate: 5939 Hashes per second
 Using key: 0

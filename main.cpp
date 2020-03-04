@@ -79,6 +79,10 @@ PwmOut MotorPWM(PWMpin);
 volatile uint64_t pwmTorque;
 uint64_t motorPosition;
 
+Thread out_comms_thread;
+Thread in_comms_thread;
+Thread motorCtrlT (osPriorityNormal,1024);
+
 volatile uint64_t newKey;
 Mutex newKey_mutex;
 
@@ -196,6 +200,10 @@ void output_thread() {
     }
 }
 
+void motorCtrlTick(){
+    motorCtrlT.signal_set(0x1);
+ }
+
 void motorCtrlFn(){
     static uint64_t old_position = motorPosition;
     Ticker motorCtrlTicker;
@@ -221,14 +229,6 @@ void motorCtrlFn(){
     }
 }
 
-void motorCtrlTick(){
-    motorCtrlT.signal_set(0x1);
- }
-
-Thread out_comms_thread;
-Thread in_comms_thread;
-Thread motorCtrlT (osPriorityNormal,1024);
-
 /////////////////////////// Main
 int main() {
     uint8_t sequence[64] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
@@ -250,6 +250,8 @@ int main() {
     MotorPWM.pulsewidth_us(PWM_PRD/2);
     out_comms_thread.start(output_thread);
     in_comms_thread.start(input_thread);
+    out_comms_thread.start(output_thread);
+    motorCtrlT.start(motorCtrlFn);
 
 
     putMessage("Hello\n\r");
@@ -261,7 +263,7 @@ int main() {
     putMessage(message);
     //orState is subtracted from future rotor state inputs to align rotor and motor states
 
-    check_motor_output_flow(); //Try and start the motor without need to spin it
+    motorControlISR(); //Try and start the motor without need to spin it
     // ------------------------------------------------------------------------------------------------------------
     // I have no idea what's going on bois
     I1.rise(&motorControlISR);
