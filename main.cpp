@@ -77,6 +77,7 @@ DigitalOut L3H(L3Hpin);
 DigitalOut TP1(TP1pin);
 PwmOut MotorPWM(PWMpin);
 volatile uint64_t pwmTorque;
+uint64_t motorPosition;
 
 volatile uint64_t newKey;
 Mutex newKey_mutex;
@@ -109,6 +110,7 @@ void serialISR(){
         inCharQ.put(newChar);
     }
  }
+
 
 void input_thread(){
     pc.attach(&serialISR);
@@ -177,11 +179,13 @@ int8_t motorHome() {
     return readRotorState();
 }
 
-void check_motor_output_flow(){
+void motorControlISR(){
     static int8_t intStateOld;
     int8_t intState = readRotorState();
     motorOut((intState-orState+lead+6)%6); //+6 to make sure the remainder is positive
     if (intState == 4 && intStateOld == 3) TP1 = !TP1;
+    int difference = intState - intStateOld;
+    motorPosition += difference;
     intStateOld = intState;
 }
 /////////////////////////////Communication
@@ -198,8 +202,38 @@ void output_thread() {
     }
 }
 
+void motorCtrlFn(){
+    static uint64_t old_position = motorPosition;
+    Ticker motorCtrlTicker;
+    Timer timer;
+    float mult;
+    int difference;
+    float velocity;
+    motorCtrlTicker.attach_us(&motorCtrlTick,100000);
+    timer.start();
+    int iter = 0;
+    while(1){
+        motorCtrlT.signal_wait(0x1);
+        mult = 1/(timer.read_ms()/1000);
+        timer.reset();
+        difference = motorPosition - old_position;
+        velocity = difference*mult;
+        if(iter == 9){
+            char message[100];
+            sprintf(message,"Motor Position: %d\n\rMotor Velocity: %f\n\r",motorPosition,velocity);
+            putMessage(message);
+        }
+        iter++;
+    }
+}
+
+void motorCtrlTick(){
+    motorCtrlT.signal_set(0x1);
+ }
+
 Thread out_comms_thread;
 Thread in_comms_thread;
+Thread motorCtrlT (osPriorityNormal,1024);
 
 /////////////////////////// Main
 int main() {
@@ -236,12 +270,12 @@ int main() {
     check_motor_output_flow(); //Try and start the motor without need to spin it
     // ------------------------------------------------------------------------------------------------------------
     // I have no idea what's going on bois
-    I1.rise(&check_motor_output_flow);
-    I1.fall(&check_motor_output_flow);
-    I2.rise(&check_motor_output_flow);
-    I2.fall(&check_motor_output_flow);
-    I3.rise(&check_motor_output_flow);
-    I3.fall(&check_motor_output_flow);
+    I1.rise(&motorControlISR);
+    I1.fall(&motorControlISR);
+    I2.rise(&motorControlISR);
+    I2.fall(&motorControlISR);
+    I3.rise(&motorControlISR);
+    I3.fall(&motorControlISR);
     // ------------------------------------------------------------------------------------------------------------
 
     t.start();
@@ -263,9 +297,9 @@ int main() {
             char key_test_message[100];
             sprintf(key_test_message, "Using key: %d\n\r",*key);
             putMessage(key_test_message);
-            char torque_test_message[100];
-            sprintf(torque_test_message, "Using torque: %d\n\r",pwmTorque);
-            putMessage(torque_test_message);
+            // char torque_test_message[100];
+            // sprintf(torque_test_message, "Using torque: %d\n\r",pwmTorque);
+            // putMessage(torque_test_message);
             t.reset();
             hash_count = 0;
         }
