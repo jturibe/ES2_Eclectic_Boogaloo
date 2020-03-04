@@ -89,21 +89,25 @@ typedef struct {
 // Serial pc(SERIAL_TX, SERIAL_RX);
 RawSerial pc(SERIAL_TX, SERIAL_RX);
 
-Mail<uint8_t, 8> inCharQ;
+Mail<uint8_t, 24> inCharQ;
 
 Mail<mail_t, 16> mail_box;
 
 
 void putMessage(char* mssg){
-    mail_t *mail = mail_box.alloc();
-    mail->pure_mssg = mssg;
-    mail_box.put(mail);
+    if(!mail_box.full()){
+        mail_t *mail = mail_box.alloc();
+        mail->pure_mssg = mssg;
+        mail_box.put(mail);
+    }
 }
 
 void serialISR(){
-     uint8_t* newChar = inCharQ.alloc();
-     *newChar = pc.getc();
-     inCharQ.put(newChar);
+    if(!inCharQ.full()){
+        uint8_t* newChar = inCharQ.alloc();
+        *newChar = pc.getc();
+        inCharQ.put(newChar);
+    }
  }
 
 void input_thread(){
@@ -119,6 +123,7 @@ void input_thread(){
                     newKey_mutex.lock();
                     sscanf(input.c_str(),"K%x",&newKey);
                     newKey_mutex.unlock();
+                    putMessage("Received a new key\n\r");
                     break;
 
                 case 't':
