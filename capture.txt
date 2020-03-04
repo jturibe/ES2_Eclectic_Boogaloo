@@ -1,0 +1,24 @@
+Current Computation Rate: 5943 Hashes per second
+Using key: 0
+Current Computation Rate: 5943 Hashes per second
+Using key: 0
+Current Computation Rate: 5943 Hashes per second
+Using key: 0
+Current Computation Rate: 5942 Hashes per second
+Using key: 0
+Current Computation Rate: 5941 Hashes per second
+Using key: 0
+Current Computation Rate: 5940 Hashes per second
+Using key: 0
+Current Computation Rate: 5938 Hashes per second
+Using key: 0
+Current Computation Rate: 5938 Hashes per second
+Using key: 0
+Current Computation Rate: 5937 Hashes per second
+Using key: 0
+Current Computation Rate: 5937 Hashes per second
+Using key: 0
+Current Computation Rate: 5937 Hashes per second
+Using key: 0
+Current Computation Rate: 5936 Hashes per second
+Using key: 0

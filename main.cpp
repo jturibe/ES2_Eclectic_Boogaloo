@@ -1,6 +1,10 @@
 #include "mbed.h"
-#include "SHA256.h"
+#include "Crypto.h"
 #include "Timer.h"
+#include <vector>
+#include <stdio.h>
+#include <mutex>          // std::mutex
+#include <string>
 
 //Photointerrupter input pins
 #define I1pin D3
@@ -16,7 +20,7 @@
 #define L1Hpin A3           //0x02
 #define L2Lpin D0           //0x04
 #define L2Hpin A6          //0x08
-#define L3Lpin D10           //0x10
+#define L3Lpin D10          //0x10
 #define L3Hpin D2          //0x20
 
 #define PWMpin D9
@@ -72,19 +76,63 @@ DigitalOut L3H(L3Hpin);
 
 DigitalOut TP1(TP1pin);
 PwmOut MotorPWM(PWMpin);
+volatile uint64_t pwmTorque;
 
-uint8_t sequence[64] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
-0x20,0x53,0x79,0x73,0x74,0x65,0x6D,0x73,
-0x20,0x61,0x72,0x65,0x20,0x66,0x75,0x6E,
-0x20,0x61,0x6E,0x64,0x20,0x64,0x6F,0x20,
-0x61,0x77,0x65,0x73,0x6F,0x6D,0x65,0x20,
-0x74,0x68,0x69,0x6E,0x67,0x73,0x21,0x20,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-uint64_t* key = (uint64_t*)&sequence[48];
-uint64_t* nonce = (uint64_t*)&sequence[56];
-uint8_t hash_result[32];
-Timer t;
+volatile uint64_t newKey;
+Mutex newKey_mutex;
+
+typedef struct {
+  char* pure_mssg;
+} mail_t;
+
+//Initialise the serial port
+// Serial pc(SERIAL_TX, SERIAL_RX);
+RawSerial pc(SERIAL_TX, SERIAL_RX);
+
+Mail<uint8_t, 8> inCharQ;
+
+Mail<mail_t, 16> mail_box;
+
+
+void putMessage(char* mssg){
+    mail_t *mail = mail_box.alloc();
+    mail->pure_mssg = mssg;
+    mail_box.put(mail);
+}
+
+void serialISR(){
+     uint8_t* newChar = inCharQ.alloc();
+     *newChar = pc.getc();
+     inCharQ.put(newChar);
+ }
+
+void input_thread(){
+    pc.attach(&serialISR);
+    std::string input = "";
+    while(1) {
+        osEvent newEvent = inCharQ.get();
+        uint8_t* newChar = (uint8_t*)newEvent.value.p;
+        input.push_back(*newChar);
+        if (*newChar == '\r'){
+            switch(input[0]){
+                case 'K':
+                    newKey_mutex.lock();
+                    sscanf(input.c_str(),"K%x",&newKey);
+                    newKey_mutex.unlock();
+                    break;
+
+                case 't':
+                    sscanf(input.c_str(),"t%d",&pwmTorque);
+                    break;
+                default:
+                ;
+            }
+            input = "";
+        }
+        inCharQ.free(newChar);
+    }
+}
+
 
 // Set a given drive state
 void motorOut(int8_t driveState){
@@ -131,25 +179,55 @@ void check_motor_output_flow(){
     if (intState == 4 && intStateOld == 3) TP1 = !TP1;
     intStateOld = intState;
 }
+/////////////////////////////Communication
+
+
+void output_thread() {
+    while(true){
+        osEvent evt = mail_box.get();
+        if (evt.status == osEventMail) {
+            mail_t *mail = (mail_t*)evt.value.p;
+            printf("%s", mail->pure_mssg);
+            mail_box.free(mail);
+        }
+    }
+}
+
+Thread out_comms_thread;
+Thread in_comms_thread;
 
 /////////////////////////// Main
 int main() {
-    orState = 0;    //Rotor offset at motor state 0
+    uint8_t sequence[64] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
+    0x20,0x53,0x79,0x73,0x74,0x65,0x6D,0x73,
+    0x20,0x61,0x72,0x65,0x20,0x66,0x75,0x6E,
+    0x20,0x61,0x6E,0x64,0x20,0x64,0x6F,0x20,
+    0x61,0x77,0x65,0x73,0x6F,0x6D,0x65,0x20,
+    0x74,0x68,0x69,0x6E,0x67,0x73,0x21,0x20,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+    uint64_t* key = (uint64_t*)&sequence[48];
+    uint64_t* nonce = (uint64_t*)&sequence[56];
+    uint8_t hash[32];
+    Timer t;
     int hash_count = 0;
     SHA256 algo;
-    const int32_t PWM_PRD = 2500;
+    const int32_t PWM_PRD = 2000;
     MotorPWM.period_us(PWM_PRD);
-    MotorPWM.pulsewidth_us(PWM_PRD);
-    //Initialise the serial port
-    Serial pc(SERIAL_TX, SERIAL_RX);
-    pc.printf("Hello\n\r");
+    MotorPWM.pulsewidth_us(PWM_PRD/2);
+    out_comms_thread.start(output_thread);
+    in_comms_thread.start(input_thread);
+
+
+    putMessage("Hello\n\r");
 
     //Run the motor synchronisation
     orState = motorHome();
-    pc.printf("Rotor origin: %x\n\r",orState);
+    char message[100];
+    sprintf(message,"Rotor origin: %x\n\r",orState);
+    putMessage(message);
     //orState is subtracted from future rotor state inputs to align rotor and motor states
 
-    MotorPWM.pulsewidth_us(PWM_PRD/2);
     check_motor_output_flow(); //Try and start the motor without need to spin it
     // ------------------------------------------------------------------------------------------------------------
     // I have no idea what's going on bois
@@ -161,25 +239,31 @@ int main() {
     I3.fall(&check_motor_output_flow);
     // ------------------------------------------------------------------------------------------------------------
 
-    //Poll the rotor state and set the motor outputs accordingly to spin the motor
     t.start();
-    pc.printf("AFTER T.START\n");
     while (1) {
-        algo.computeHash(hash_result, sequence, 64);
-        pc.printf("AFTER compute hash\n");
-        if ((hash_result[0]==0) && (hash_result[1]==0)) {
-            pc.printf("Sucessful nonce, Integer rep: %d \n", *nonce);
-            pc.printf("Successful nonce, Hex rep: 0x%X \n", *nonce);
-            hash_count++;
+        newKey_mutex.lock();
+        *key = newKey;
+        newKey_mutex.unlock();
+        algo.computeHash(hash, sequence, 64);
+        hash_count++;
+        if ((hash[0]==0) && (hash[1]==0)) {
+            char message[100];
+            sprintf(message, "Successful nonce, Hex rep: 0x%X\n\r", *nonce);
+            putMessage(message);
         }
-        pc.printf("AFTER hash result\n");
         if (t.read() >= 1){
-            pc.printf("Current Computation Rate: %d Hashes per second\n",hash_count);
+            char message[100];
+            sprintf(message, "Current Computation Rate: %d Hashes per second\n\r",hash_count);
+            putMessage(message);
+            char key_test_message[100];
+            sprintf(key_test_message, "Using key: %d\n\r",*key);
+            putMessage(key_test_message);
+            char torque_test_message[100];
+            sprintf(torque_test_message, "Using torque: %d\n\r",pwmTorque);
+            putMessage(torque_test_message);
             t.reset();
             hash_count = 0;
         }
-        pc.printf("AFTER time eval\n");
         (*nonce)++;
-        pc.printf("AFTER nonce increment\n");
     }
 }
