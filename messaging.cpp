@@ -51,7 +51,7 @@ Mutex selectRotations_mutex;
 //// box queue along serial connection to host
 void output_thread() {
     while(true){
-        osEvent evt = mail_box.get();
+        osEvent evt = mail_box.get(1);
         if (evt.status == osEventMail) {
             mail_t *mail = (mail_t*)evt.value.p;
             printf("%s", mail->pure_mssg);
@@ -72,7 +72,6 @@ void putMessage(char* mssg){
 //// FUNCTION: Interrupt service routine that places characters from serial
 //// input messages into the character queue inCharQ
 void serialISR(){
-    putMessage("GIMME GIMME GIMME \n\r");
     if(!inCharQ.full()){
         uint8_t* newChar = inCharQ.alloc();
         *newChar = pc.getc();
@@ -88,46 +87,47 @@ void input_thread(){
    // input message
    std::string input = "";
    while(1) {
-       // Take in character and add to input message
-       osEvent newEvent = inCharQ.get();
-       uint8_t* newChar = (uint8_t*)newEvent.value.p;
-       input.push_back(*newChar);
-       // If '\r', end of message reached, time to decode
-       if (*newChar == '\r'){
-           switch(input[0]){
-               case 'K':
-               // New Key command, of form: K[0-9a-fA-F]{16}
-                   newKey_mutex.lock();
-                   sscanf(input.c_str(),"K%x",&newKey);
-                   newKey_mutex.unlock();
-                   break;
+        // Take in character and add to input message
+        osEvent newEvent = inCharQ.get(1);
+        uint8_t* newChar = (uint8_t*)newEvent.value.p;
+        input.push_back(*newChar);
+        // If '\r', end of message reached, time to decode
+        if (*newChar == '\r'){
+            putMessage("GIMME GIMME GIMME \n\r");
+            switch(input[0]){
+                case 'K':
+                // New Key command, of form: K[0-9a-fA-F]{16}
+                    newKey_mutex.lock();
+                    sscanf(input.c_str(),"K%x",&newKey);
+                    newKey_mutex.unlock();
+                    break;
 
-               case 'V':
-               // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
-                   maxVelocity_mutex.lock();
-                   sscanf(input.c_str(),"V%f",&maxVelocity);
-                   maxVelocity_mutex.unlock();
-                   break;
+                case 'V':
+                // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
+                    maxVelocity_mutex.lock();
+                    sscanf(input.c_str(),"V%f",&maxVelocity);
+                    maxVelocity_mutex.unlock();
+                    break;
 
-               case 'R':
+                case 'R':
                // Set target rotations command, of form: R-?\d{1,4}(\.\d)?
-                   float input_rotations;
-                   sscanf(input.c_str(), "R%f", &input_rotations);
-                   selectRotations_mutex.lock();
-                   selectRotations = ((float)motorPosition)/6 + input_rotations;
-                   selectRotations_mutex.unlock();
-                   break;
+                    float input_rotations;
+                    sscanf(input.c_str(), "R%f", &input_rotations);
+                    selectRotations_mutex.lock();
+                    selectRotations = ((float)motorPosition)/6 + input_rotations;
+                    selectRotations_mutex.unlock();
+                    break;
               // Tester code for receiving PWM torque, unused for spec
-               case 't':
-                   sscanf(input.c_str(),"t%d",&pwmTorque);
-                   break;
-               default:
-               ;
-           }
-           // Clear characters for next input message
-           input = "";
-       }
-       // Free up character queue
-       inCharQ.free(newChar);
-   }
+                case 't':
+                    sscanf(input.c_str(),"t%d",&pwmTorque);
+                    break;
+                default:
+                ;
+            }
+            // Clear characters for next input message
+            input = "";
+        }
+        // Free up character queue
+        inCharQ.free(newChar);
+    }
 }
