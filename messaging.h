@@ -38,7 +38,7 @@ extern void putMessage(char* mssg);
 
 // Interrupt service routine that places characters from serial input messages
 // into the character queue inCharQ
-extern void serialISR();
+void serialISR();
 
 // Called by input thread in_comms_thread - Receives characters from
 // inCharQ and assembles the characters into their original message. Then,

@@ -28,7 +28,7 @@
 #define CHApin   D12
 #define CHBpin   D11
 
-// Motor Drive output pins   //Mask in output byte
+//Motor Drive output pins   //Mask in output byte
 #define L1Lpin D1           //0x01
 #define L1Hpin A3           //0x02
 #define L2Lpin D0           //0x04
@@ -36,10 +36,9 @@
 #define L3Lpin D10           //0x10
 #define L3Hpin D2          //0x20
 
-// PWM output pin
 #define PWMpin D9
 
-// Motor current sense
+//Motor current sense
 #define MCSPpin   A1
 #define MCSNpin   A0
 

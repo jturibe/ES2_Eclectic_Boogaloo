@@ -24,9 +24,9 @@ int main() {
 
     //putMessage("After setISRPhotoInterruptors\n\r");
 
-    out_comms_thread.start(output_thread);
+    // out_comms_thread.start(output_thread);
     in_comms_thread.start(input_thread);
-    motorCtrlT.start(motorCtrlFn);
+    // motorCtrlT.start(motorCtrlFn);
     // t.start();
     while (1) {
         // miner.compute_hash();
