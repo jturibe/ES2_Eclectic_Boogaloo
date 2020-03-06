@@ -1,11 +1,29 @@
+#ifndef MESSAGING_H
+#define MESSAGING_H
+
 #include "mbed.h"
+#include "motor_control.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-// Header file containing all declarations of functions that dictate messaging//
-// and serial input and output.                                               //
+// Header file containing all declarations of functions and external global   //
+// variables that dictate messaging and serial input and output.              //
 //                                                                            //
+// Global Variables                                                           //
 // Functions                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////// GLOBAL VARIABLES //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+extern volatile float maxVelocity; // Selected VELOCITY by user
+extern Mutex maxVelocity_mutex; // Mutex protecting resource selected VELOCITY
+
+extern volatile uint64_t newKey; // Selected KEY by user
+extern Mutex newKey_mutex; // Mutex protecting resource selected KEY
+
+extern volatile float selectRotations; // Selected ROTATIONS by user
+extern Mutex selectRotations_mutex; // Mutex protecting resource selected ROTATIONS
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////
@@ -26,3 +44,5 @@ extern void serialISR();
 // inCharQ and assembles the characters into their original message. Then,
 // interprets the message and implements the corresponding input command.
 extern void input_thread();
+
+#endif

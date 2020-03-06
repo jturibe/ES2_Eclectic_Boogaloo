@@ -1,5 +1,10 @@
+#ifndef PWM_CONTROLLER_H
+#define PWM_CONTROLLER_H
+
 #include <mutex>
 #include "mbed.h"
+#include "messaging.h"
+#include "motor_control.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // PWM CONTROLLER CLASS declaration in charge of performing PID CONTROL to    //
@@ -35,10 +40,6 @@ public:
     float c_err; // Cumulative ERROR for Integral
     float past_rota_err; // Previous ROTATION ERROR
 
-    /// DESIRED VELOCITY
-    float maxVelocity; // Selected VELOCITY by user
-    Mutex maxVelocity_mutex; // Mutex protecting resource selected VELOCITY
-
     /// INTEGRAL LIMIT
     float y_is_limit = 1600; // Integral limit to prevent overshoot
 
@@ -48,3 +49,5 @@ public:
     void setRotation(float error_term); // Compute power for ROTATION using PID
 
 };
+
+#endif

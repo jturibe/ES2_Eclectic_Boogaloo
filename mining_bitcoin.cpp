@@ -1,6 +1,6 @@
 #include "mining_bitcoin.h"
 
-BitcoinMiner::compute_hash(){
+void BitcoinMiner::compute_hash(){
     newKey_mutex.lock();
     *key = newKey;
     newKey_mutex.unlock();

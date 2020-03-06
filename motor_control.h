@@ -1,12 +1,17 @@
+#ifndef MOTOR_CONTROL_H
+#define MOTOR_CONTROL_H
+
 #include "mbed.h"
 #include "Timer.h"
 #include "pwm_controller.h"
+#include "messaging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-// Header file containing all declarations of pins, global variables and      //
-// functions that dictate motor control.                                      //
+// Header file containing all declarations of pins, external global variables //
+// and functions that dictate motor control.                                  //
 //                                                                            //
 // Pin Definitions                                                            //
+// Global Variables                                                           //
 // Functions                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,6 +62,28 @@ State   L1  L2  L3
 */
 
 ////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// GLOBAL VARIABLES //////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+// Motor position in amount of states, to calculate rotations must divide by 6
+extern volatile int64_t motorPosition;
+
+// PWM torque - currently unused
+extern volatile uint64_t pwmTorque;
+
+// Motor Control Thread Initalisation
+extern Thread motorCtrlT;
+
+// Phase lead to make motor spin
+extern volatile int8_t lead; //2 for forwards, -2 for backwards
+
+// Set the Pulse Width Modulation Period to 2000 us (2 ms)
+extern const int32_t PWM_PRD;
+
+// Pulse width modulator for motor output
+extern PwmOut MotorPWM;
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// FUNCTION DECLARATIONS ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -81,3 +108,5 @@ extern void motorCtrlTick();
 // Computes velocity and rotational position. Uses PWMController class to set
 // motor power based on computed values.
 extern void motorCtrlFn();
+
+#endif

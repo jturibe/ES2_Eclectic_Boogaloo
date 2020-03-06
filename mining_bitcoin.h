@@ -1,4 +1,8 @@
+#ifndef MINING_BITCOIN_H
+#define MINING_BITCOIN_H
+
 #include "Crypto.h"
+#include "messaging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // BITCOIN MINER CLASS declaration in charge of performing "bitcoin mining".  //
@@ -23,7 +27,7 @@ private:
     SHA256 algo;
 
 public:
-    volatile uint64_t newKey;
-    Mutex newKey_mutex;
-    compute_hash();
+    void compute_hash();
 };
+
+#endif

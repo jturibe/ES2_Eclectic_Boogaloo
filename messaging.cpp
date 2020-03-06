@@ -4,12 +4,9 @@
 // GLOBAL VARIABLES and FUNCTIONS used specifically for controlling the motor.//
 // See header file for FUNCTION DECLARATIONS and PIN DEFINITIONS.             //
 // FUNCTIONS in file:                                                         //
-// - output_thread(int8_t driveState)                                         //
+// - output_thread()                                                          //
 // - putMessage()                                                             //
 // - serialISR()                                                              //
-// - motorControlISR()                                                        //
-// - motorCtrlTick()                                                          //
-// - motorCtrlFn()                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +27,21 @@ Mail<mail_t, 16> mail_box;
 
 // Initialise character queue for input messages from host
 Mail<uint8_t, 24> inCharQ;
+
+// Selected VELOCITY by user
+volatile float maxVelocity;
+// Mutex protecting resource selected VELOCITY
+Mutex maxVelocity_mutex;
+
+// Selected KEY by user
+volatile uint64_t newKey;
+// Mutex protecting resource selected KEY
+Mutex newKey_mutex;
+
+// Selected ROTATIONS by user
+volatile float selectRotations;
+// Mutex protecting resource selected ROTATIONS
+Mutex selectRotations_mutex;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////
@@ -92,7 +104,7 @@ void serialISR(){
                  case 'V':
                  // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
                      maxVelocity_mutex.lock();
-                     sscanf(input.c_str(),"V%f",&(pwmcontroll.maxVelocity));
+                     sscanf(input.c_str(),"V%f",&(maxVelocity));
                      maxVelocity_mutex.unlock();
                      break;
 
@@ -100,7 +112,9 @@ void serialISR(){
                  // Set target rotations command, of form: R-?\d{1,4}(\.\d)?
                      float input_rotations;
                      sscanf(input.c_str(), "R%f", &input_rotations);
-                     select_rotations = ((float)motorPosition)/6 + input_rotations;
+                     selectRotations_mutex.lock();
+                     selectRotations = ((float)motorPosition)/6 + input_rotations;
+                     selectRotations_mutex.unlock();
                      break;
                 // Tester code for receiving PWM torque, unused for spec
                  case 't':

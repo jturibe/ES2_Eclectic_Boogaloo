@@ -70,6 +70,9 @@ PWMController pwmcontrol;
 
 //// FUNCTION: Set photointerrupter pins for calling motorControlISR
 void setISRPhotoInterruptors(){
+    orState = motorHome();
+    MotorPWM.period_us(PWM_PRD);
+    MotorPWM.pulsewidth_us(PWM_PRD);
     I1.rise(&motorControlISR);
     I1.fall(&motorControlISR);
     I2.rise(&motorControlISR);
@@ -147,7 +150,6 @@ void motorCtrlTick(){
 //// Part of motor control thread: motorCtrlT
 void motorCtrlFn(){
     // Initialise required variables
-    orstate = motorHome();
     int64_t old_position = motorPosition;
     Ticker motorCtrlTicker;
     Timer timer;
@@ -173,11 +175,11 @@ void motorCtrlFn(){
         // pwmcontrol.setRotation(rotation_error);
         // maxVelocity_mutex.lock();
         // Calculate velocity error and set power
-        error_term = (pwmcontrol.maxVelocity - velocity);
+        error_term = (maxVelocity - velocity);
         pwmcontrol.setVelocity(error_term);
         if(iter == 9){
              char message[150];
-             sprintf(message,"MaxVelocity: %f, Motor Velocity: %f, Motor Power: %f\n\r",pwmcontrol.maxVelocity,velocity,pwmcontrol.y_s);
+             sprintf(message,"MaxVelocity: %f, Motor Velocity: %f, Motor Power: %f\n\r",maxVelocity,velocity,pwmcontrol.y_s);
              //sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f\n\r",velocity,((float)motorPosition)/6,select_rotations);
              putMessage(message);
             // char message2[150];

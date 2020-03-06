@@ -1,4 +1,3 @@
-#include "mbed.h"
 #include "pwm_controller.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -11,12 +10,13 @@
 //// FUNCTION: Initialise variables to required starting values
 PWMController::PWMController(){
     // Initialise VELOCITY PID terms
-    y_s = PWM_PRD/2;
+    y_s = 0;
     y_ps = 0;
     y_is = 0;
     y_ds = 0;
 
     // Initialise ROTATION PID terms
+    y_r = 0;
     y_pr = 0;
     y_dr = 0;
 
