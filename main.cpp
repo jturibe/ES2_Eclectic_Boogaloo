@@ -10,21 +10,23 @@ Thread out_comms_thread;
 Thread in_comms_thread;
 Thread motorCtrlT(osPriorityNormal,1024);
 
+
 /////////////////////////// Main
 int main() {
 
+
     Timer t;
     // BitcoinMiner miner;
-    putMessage("Hello\n\r");
+    // putMessage("Hello\n\r");
 
     // Set ISR Photointerruptors to call motor control ISR for running motor
     setISRPhotoInterruptors();
 
-    putMessage("After setISRPhotoInterruptors\n\r")
+    //putMessage("After setISRPhotoInterruptors\n\r");
 
     out_comms_thread.start(output_thread);
-    // in_comms_thread.start(input_thread);
-    // motorCtrlT.start(motorCtrlFn);
+    in_comms_thread.start(input_thread);
+    motorCtrlT.start(motorCtrlFn);
     // t.start();
     while (1) {
         // miner.compute_hash();

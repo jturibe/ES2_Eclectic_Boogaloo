@@ -72,7 +72,7 @@ PWMController pwmcontrol;
 void setISRPhotoInterruptors(){
     orState = motorHome();
     MotorPWM.period_us(PWM_PRD);
-    MotorPWM.pulsewidth_us(PWM_PRD);
+    MotorPWM.pulsewidth_us(PWM_PRD/2);
     I1.rise(&motorControlISR);
     I1.fall(&motorControlISR);
     I2.rise(&motorControlISR);

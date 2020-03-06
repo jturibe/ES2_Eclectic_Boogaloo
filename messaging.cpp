@@ -105,6 +105,7 @@ void serialISR(){
                  // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
                      maxVelocity_mutex.lock();
                      sscanf(input.c_str(),"V%f",&(maxVelocity));
+                     putMessage("GIMME GIMME GIMME \n\r");
                      maxVelocity_mutex.unlock();
                      break;
 
