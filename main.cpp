@@ -1,6 +1,10 @@
 #include "mbed.h"
-#include "SHA256.h"
+#include "Crypto.h"
 #include "Timer.h"
+#include <vector>
+#include <stdio.h>
+#include <mutex>          // std::mutex
+#include <string>
 
 //Photointerrupter input pins
 #define I1pin D3
@@ -52,17 +56,18 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 //Phase lead to make motor spin
 const int8_t lead = 2;  //2 for forwards, -2 for backwards
 
-int8_t orState;
+int8_t orState = 0;    //Rotot offset at motor state 0
+int8_t intState = 0;
 
 //Status LED
 DigitalOut led1(LED1);
 
-// Photointerrupter inputs
+//Photointerrupter inputs
 InterruptIn I1(I1pin);
 InterruptIn I2(I2pin);
 InterruptIn I3(I3pin);
 
-// Motor Drive outputs
+//Motor Drive outputs
 DigitalOut L1L(L1Lpin);
 DigitalOut L1H(L1Hpin);
 DigitalOut L2L(L2Lpin);
@@ -73,26 +78,13 @@ DigitalOut L3H(L3Hpin);
 DigitalOut TP1(TP1pin);
 PwmOut MotorPWM(PWMpin);
 
-uint8_t sequence[64] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
-0x20,0x53,0x79,0x73,0x74,0x65,0x6D,0x73,
-0x20,0x61,0x72,0x65,0x20,0x66,0x75,0x6E,
-0x20,0x61,0x6E,0x64,0x20,0x64,0x6F,0x20,
-0x61,0x77,0x65,0x73,0x6F,0x6D,0x65,0x20,
-0x74,0x68,0x69,0x6E,0x67,0x73,0x21,0x20,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-uint64_t* key = (uint64_t*)&sequence[48];
-uint64_t* nonce = (uint64_t*)&sequence[56];
-uint8_t hash_result[32];
-Timer t;
-
-// Set a given drive state
+//Set a given drive state
 void motorOut(int8_t driveState){
 
-    // Lookup the output byte from the drive state.
+    //Lookup the output byte from the drive state.
     int8_t driveOut = driveTable[driveState & 0x07];
 
-    // Turn off first
+    //Turn off first
     if (~driveOut & 0x01) L1L = 0;
     if (~driveOut & 0x02) L1H = 1;
     if (~driveOut & 0x04) L2L = 0;
@@ -100,86 +92,95 @@ void motorOut(int8_t driveState){
     if (~driveOut & 0x10) L3L = 0;
     if (~driveOut & 0x20) L3H = 1;
 
-    // Then turn on
+    //Then turn on
     if (driveOut & 0x01) L1L = 1;
     if (driveOut & 0x02) L1H = 0;
     if (driveOut & 0x04) L2L = 1;
     if (driveOut & 0x08) L2H = 0;
     if (driveOut & 0x10) L3L = 1;
     if (driveOut & 0x20) L3H = 0;
-}
+    }
 
-    // Convert photointerrupter inputs to a rotor state
+    //Convert photointerrupter inputs to a rotor state
 inline int8_t readRotorState(){
     return stateMap[I1 + 2*I2 + 4*I3];
-}
+    }
 
-// Basic synchronisation routine
+//Basic synchronisation routine
 int8_t motorHome() {
-    // Put the motor in drive state 0 and wait for it to stabilise
+    //Put the motor in drive state 0 and wait for it to stabilise
     motorOut(0);
     wait(2.0);
 
-    // Get the rotor state
+    //Get the rotor state
     return readRotorState();
 }
 
 void check_motor_output_flow(){
     static int8_t intStateOld;
-    int8_t intState = readRotorState();
-    motorOut((intState-orState+lead+6)%6); //+6 to make sure the remainder is positive
-    if (intState == 4 && intStateOld == 3) TP1 = !TP1;
-    intStateOld = intState;
+    intState = readRotorState();
+    if (intState != intStateOld) {
+        motorOut((intState-orState+lead+6)%6); //+6 to make sure the remainder is positive
+        intStateOld = intState;
+    }
 }
 
-/////////////////////////// Main
+//Main
 int main() {
-    orState = 0;    //Rotor offset at motor state 0
-    int hash_count = 0;
-    SHA256 algo;
+    uint8_t sequence[] = {0x45,0x6D,0x62,0x65,0x64,0x64,0x65,0x64,
+    0x20,0x53,0x79,0x73,0x74,0x65,0x6D,0x73,
+    0x20,0x61,0x72,0x65,0x20,0x66,0x75,0x6E,
+    0x20,0x61,0x6E,0x64,0x20,0x64,0x6F,0x20,
+    0x61,0x77,0x65,0x73,0x6F,0x6D,0x65,0x20,
+    0x74,0x68,0x69,0x6E,0x67,0x73,0x21,0x20,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+    uint64_t* key = (uint64_t*)&sequence[48];
+    uint64_t* nonce = (uint64_t*)&sequence[56];
+    uint8_t hash[32];
+
     const int32_t PWM_PRD = 2500;
     MotorPWM.period_us(PWM_PRD);
     MotorPWM.pulsewidth_us(PWM_PRD);
+
+    SHA256 algo;
+
     //Initialise the serial port
     Serial pc(SERIAL_TX, SERIAL_RX);
     pc.printf("Hello\n\r");
 
     //Run the motor synchronisation
     orState = motorHome();
-    pc.printf("Rotor origin: %x\n\r",orState);
-    //orState is subtracted from future rotor state inputs to align rotor and motor states
 
-    MotorPWM.pulsewidth_us(PWM_PRD/2);
-    check_motor_output_flow(); //Try and start the motor without need to spin it
-    // ------------------------------------------------------------------------------------------------------------
-    // I have no idea what's going on bois
+    // Start it without spinning it first
+    check_motor_output_flow();
+
     I1.rise(&check_motor_output_flow);
     I1.fall(&check_motor_output_flow);
     I2.rise(&check_motor_output_flow);
     I2.fall(&check_motor_output_flow);
     I3.rise(&check_motor_output_flow);
     I3.fall(&check_motor_output_flow);
-    // ------------------------------------------------------------------------------------------------------------
+
+    //orState is subtracted from future rotor state inputs to align rotor and motor states
 
     //Poll the rotor state and set the motor outputs accordingly to spin the motor
+    Timer t;
     t.start();
-    pc.printf("AFTER T.START\n");
+    int hash_count = 0;
     while (1) {
-        algo.computeHash(hash_result, sequence, 64);
-        pc.printf("AFTER compute hash\n");
-        if ((hash_result[0]==0) && (hash_result[1]==0)) {
-            pc.printf("Sucessful nonce, Integer rep: %d \n", *nonce);
-            pc.printf("Successful nonce, Hex rep: 0x%X \n", *nonce);
-            hash_count++;
+        algo.computeHash(hash, sequence, 64);
+        hash_count++;
+
+        if(hash[0] == 0 && hash[1] == 0){
+            pc.printf("Successful nonce: 0x%X \n\r",*nonce);
         }
-        pc.printf("AFTER hash result\n");
-        if (t.read() >= 1){
-            pc.printf("Current Computation Rate: %d Hashes per second\n",hash_count);
+
+        if (t.read() >= 1) {
+            pc.printf("Hash computation rate: %d \n\r", hash_count);
             t.reset();
             hash_count = 0;
         }
-        pc.printf("AFTER time eval\n");
         (*nonce)++;
-        pc.printf("AFTER nonce increment\n");
     }
 }
