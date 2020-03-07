@@ -29,17 +29,17 @@ int main() {
     motorCtrlT.start(motorCtrlFn);
     // t.start();
     while (1) {
-        // miner.compute_hash();
-        // if (t.read() >= 1){
-        //     // char message[100];
-        //     // sprintf(message, "Current Computation Rate: %d Hashes per second\n\r",hash_count);
-        //     // putMessage(message);
-        //     // char key_test_message[100];
-        //     // sprintf(key_test_message, "Using key: %d\n\r",*key);
-        //     // putMessage(key_test_message);
-        //     t.reset();
-        //     hash_count = 0;
-        // }
-        // hash_count++;
+        miner.compute_hash();
+        if (t.read() >= 1){
+            // char message[100];
+            // sprintf(message, "Current Computation Rate: %d Hashes per second\n\r",hash_count);
+            // putMessage(message);
+            // char key_test_message[100];
+            // sprintf(key_test_message, "Using key: %d\n\r",*key);
+            // putMessage(key_test_message);
+            t.reset();
+            miner.hash_count = 0;
+        }
+        miner.hash_count++;
     }
 }
