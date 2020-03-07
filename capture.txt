@@ -1,5 +1,0 @@
-Hello
-Motor Position: 0
-Motor Velocity: 0.000000
-Rotor origin: 3
-Successful nonce, Hex rep: 0x87CF
