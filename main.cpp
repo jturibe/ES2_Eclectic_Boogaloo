@@ -16,7 +16,7 @@ int main() {
 
 
     Timer t;
-    // BitcoinMiner miner;
+    BitcoinMiner miner;
     // putMessage("Hello\n\r");
 
     // Set ISR Photointerruptors to call motor control ISR for running motor
