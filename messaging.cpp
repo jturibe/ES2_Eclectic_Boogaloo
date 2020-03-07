@@ -72,7 +72,6 @@ void putMessage(char* mssg){
 //// FUNCTION: Interrupt service routine that places characters from serial
 //// input messages into the character queue inCharQ
 void serialISR(){
-    putMessage("GIMME GIMME GIMME \n\r");
     if(!inCharQ.full()){
         uint8_t* newChar = inCharQ.alloc();
         *newChar = pc.getc();
@@ -94,6 +93,9 @@ void input_thread(){
        input.push_back(*newChar);
        // If '\r', end of message reached, time to decode
        if (*newChar == '\r'){
+           char message[80];
+           sprintf(message, "Received a command, decoding... %s\n\r",input.c_str());
+           putMessage(message);
            switch(input[0]){
                case 'K':
                // New Key command, of form: K[0-9a-fA-F]{16}
