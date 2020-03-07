@@ -23,10 +23,10 @@ private:
     uint64_t* key = (uint64_t*)&sequence[48];
     uint64_t* nonce = (uint64_t*)&sequence[56];
     uint8_t hash[32];
-    int hash_count = 0;
     SHA256 algo;
 
 public:
+    int hash_count = 0;
     void compute_hash();
 };
 
