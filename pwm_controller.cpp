@@ -44,7 +44,7 @@ float PWMController::setVelocity(float error_term){
     lead = y_s < 0 ? -2:2;
     y_s = abs(y_s) > PWM_PRD ? PWM_PRD : y_s;
 
-    return y_s;
+    return abs(y_s);
 }
 
 //// FUNCTION: Compute power for ROTATION using PID
@@ -65,7 +65,7 @@ float PWMController::setRotation(float error_term){
     // Update value of previous error
     past_rota_err = error_term;
 
-    return y_r;
+    return abs(y_r);
 }
 
 float PWMController::pwmController(){
