@@ -1,0 +1,50 @@
+Hello
+
+++ MbedOS Fault Handler ++
+
+FaultType: HardFault
+
+Context:
+R0   : 00000000
+R1   : 00000000
+R2   : 00000000
+R3   : 00000000
+R4   : 08011090
+R5   : 20001EEC
+R6   : 20002190
+R7   : 200016E8
+R8   : 08011090
+R9   : 200016C8
+R10  : 00000000
+R11  : 00000000
+R12  : 0800E041
+SP   : 20001528
+LR   : 080058DB
+PC   : 080058DA
+xPSR : 61000000
+PSP  : 200014C0
+MSP  : 2000FFD8
+CPUID: 410FC241
+HFSR : 40000000
+MMFSR: 00000082
+BFSR : 00000000
+UFSR : 00000000
+DFSR : 00000008
+AFSR : 00000000
+MMFAR: 00000000
+Mode : Thread
+Priv : Privileged
+Stack: PSP
+
+-- MbedOS Fault Handler --
+
+
+
+++ MbedOS Error Info ++
+Error Status: 0x80FF013D Code: 317 Module: 255
+Error Message: Fault exception
+Location: 0x80058DA
+Error Value: 0x20001AF8
+Current Thread: main Id: 0x20002474 Entry: 0x800B8A1 StackSize: 0x1000 StackMem: 0x20000728 SP: 0x20001528 
+For more info, visit: https://mbed.com/s/error?error=0x80FF013D&tgt=NUCLEO_L432KC
+-- MbedOS Error Info --
