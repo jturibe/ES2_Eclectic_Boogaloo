@@ -22,6 +22,7 @@ PWMController::PWMController(){
 
     // Initialise ERROR TERMS
     c_err = 0;
+    r_err = 0;
     past_rota_err = 0;
 }
 
@@ -52,11 +53,16 @@ float PWMController::setRotation(float error_term){
     // Calculate the proportional term
     y_pr = k_pr*error_term;
 
+    //Calculate integral term
+    r_err += error_term;
+    y_ir = r_err*k_ir;
+
+
     // Calculate the differential term
     y_dr = k_dr*(error_term - past_rota_err);
 
     // Calculate PWM control
-    y_r = y_pr + y_dr;
+    y_r = y_pr + y_dr +y_ir;
 
     // Convert power term to valid PWM
     lead = y_r < 0 ? -2:2;

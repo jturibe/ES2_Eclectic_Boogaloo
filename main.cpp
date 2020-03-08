@@ -5,11 +5,12 @@
 #include "motor_control.h"
 #include "mining_bitcoin.h"
 #include "messaging.h"
+#include "tuner.h"
 
 Thread out_comms_thread;
 Thread in_comms_thread;
 Thread motorCtrlT(osPriorityNormal,1024);
-
+Thread tunerThread(osPriorityNormal,1024);
 
 /////////////////////////// Main
 int main() {

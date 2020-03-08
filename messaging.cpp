@@ -43,6 +43,17 @@ volatile float selectRotations;
 // Mutex protecting resource selected ROTATIONS
 Mutex selectRotations_mutex;
 
+volatile float noteFrequencies[16];
+Mutex noteFrequencies_mutex;
+
+volatile float noteDurations[16];
+Mutex noteDurations_mutex;
+
+volatile int melodyLength;
+Mutex melodyLength_mutex;
+
+bool tune_set = false;
+
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,53 +94,71 @@ void serialISR(){
  //// from inCharQ and assembles the characters into their original message.
  //// Then, interprets the message and implements the corresponding command
 void input_thread(){
-   pc.attach(&serialISR);
-   // input message
-   std::string input = "";
-   while(1) {
-       // Take in character and add to input message
-       osEvent newEvent = inCharQ.get();
-       uint8_t* newChar = (uint8_t*)newEvent.value.p;
-       input.push_back(*newChar);
-       // If '\r', end of message reached, time to decode
-       if (*newChar == '\r'){
-           char message[80];
-           sprintf(message, "Received a command, decoding... %s\n\r",input.c_str());
-           putMessage(message);
-           switch(input[0]){
-               case 'K':
-               // New Key command, of form: K[0-9a-fA-F]{16}
-                   newKey_mutex.lock();
-                   sscanf(input.c_str(),"K%x",&newKey);
-                   newKey_mutex.unlock();
-                   break;
+    pc.attach(&serialISR);
+    // input message
+    std::string input = "";
+    while(1) {
+        // Take in character and add to input message
+        osEvent newEvent = inCharQ.get();
+        uint8_t* newChar = (uint8_t*)newEvent.value.p;
+        input.push_back(*newChar);
+        // If '\r', end of message reached, time to decode
+        if (*newChar == '\r'){
+            char message[80];
+            sprintf(message, "Received a command, decoding... %s\n\r",input.c_str());
+            putMessage(message);
+            switch(input[0]){
+                case 'K':{
+                    // New Key command, of form: K[0-9a-fA-F]{16}
+                    newKey_mutex.lock();
+                    sscanf(input.c_str(),"K%x",&newKey);
+                    newKey_mutex.unlock();
+                    break;
+                }
 
-               case 'V':
-               // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
-                   maxVelocity_mutex.lock();
-                   sscanf(input.c_str(),"V%f",&maxVelocity);
-                   maxVelocity_mutex.unlock();
-                   break;
+                case 'V':{
+                    // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
+                    maxVelocity_mutex.lock();
+                    sscanf(input.c_str(),"V%f",&maxVelocity);
+                    maxVelocity_mutex.unlock();
+                    break;
+                }
 
-               case 'R':
-               // Set target rotations command, of form: R-?\d{1,4}(\.\d)?
-                   float input_rotations;
-                   sscanf(input.c_str(), "R%f", &input_rotations);
-                   selectRotations_mutex.lock();
-                   selectRotations = ((float)motorPosition)/6 + input_rotations;
-                   selectRotations_mutex.unlock();
-                   break;
-              // Tester code for receiving PWM torque, unused for spec
-               case 't':
-                   sscanf(input.c_str(),"t%d",&pwmTorque);
-                   break;
-               default:
-               ;
-           }
-           // Clear characters for next input message
-           input = "";
-       }
-       // Free up character queue
-       inCharQ.free(newChar);
+                case 'R':{
+                    // Set target rotations command, of form: R-?\d{1,4}(\.\d)?
+                    float input_rotations;
+                    sscanf(input.c_str(), "R%f", &input_rotations);
+                    selectRotations_mutex.lock();
+                    selectRotations = ((float)motorPosition)/6 + input_rotations;
+                    selectRotations_mutex.unlock();
+                    break;
+                }
+
+                case 'T':{
+                // Set tune, of form: T([A-G][#^]?[1-8]){1,16} (where # and ^ are characters)
+                    std::string tune_string = input.substr(1, input.length() - 1);
+                    tune_parser(tune_string);
+                    if(!tune_set){
+                        tune_set = true;
+                        tunerThread.start(playTune);
+                    }
+                    break;
+                }
+                // Tester code for receiving PWM torque, unused for spec
+                case 't':{
+                    sscanf(input.c_str(),"t%d",&pwmTorque);
+                    break;
+                }
+
+                default:{
+                    continue;
+                }
+
+            }
+               // Clear characters for next input message
+               input = "";
+        }
+        // Free up character queue
+        inCharQ.free(newChar);
    }
 }

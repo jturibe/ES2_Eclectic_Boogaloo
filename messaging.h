@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "motor_control.h"
+#include "tuner.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header file containing all declarations of functions and external global   //
@@ -24,6 +25,17 @@ extern Mutex newKey_mutex; // Mutex protecting resource selected KEY
 
 extern volatile float selectRotations; // Selected ROTATIONS by user
 extern Mutex selectRotations_mutex; // Mutex protecting resource selected ROTATIONS
+
+extern volatile float noteFrequencies[16];
+extern Mutex noteFrequencies_mutex;
+
+extern volatile float noteDurations[16];
+extern Mutex noteDurations_mutex;
+
+extern volatile int melodyLength;
+extern Mutex melodyLength_mutex;
+
+extern Thread tunerThread;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////

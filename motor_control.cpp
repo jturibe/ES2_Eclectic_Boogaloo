@@ -25,7 +25,7 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 
 // Phase lead to make motor spin
 volatile int8_t lead = 2;  //2 for forwards, -2 for backwards
-const int32_t PWM_PRD = 2500;
+int32_t PWM_PRD = 2500;
 
 // Original and Starting state of the motor, used to implement motor rotation
 int8_t orState = 0;
@@ -181,7 +181,7 @@ void motorCtrlFn(){
         MotorPWM.pulsewidth_us(pwmcontrol.setRotation(selectRotations-((float)motorPosition)/6));
         if(iter == 9){
              char message[150];
-             // sprintf(message,"MaxVelocity: %f, Motor Velocity: %f, Motor Power: %f\n\r",maxVelocity,velocity,pwmcontrol.y_s);
+             // // sprintf(message,"MaxVelocity: %f, Motor Velocity: %f, Motor Power: %f\n\r",maxVelocity,velocity,pwmcontrol.y_s);
              sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Set power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_r);
              putMessage(message);
             // char message2[150];
