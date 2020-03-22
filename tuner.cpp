@@ -34,19 +34,20 @@ void tune_parser(std::string melody) {
 }
 
 void playTune(){
-    Timer t;
-    t.start();
+   // Timer t;
+   // t.start();
     while(1){
         for(int i = 0; i < melodyLength; i++){
-            t.reset();
+            //t.reset();
             PWM_PRD = (1/noteFrequencies[i])*1000000;
             MotorPWM.period_us(PWM_PRD);
             char message[150];
             sprintf(message, "Set Note: %d, Melody Length: %d, Note Duration: %d\n\r",PWM_PRD, melodyLength, noteDurations[i]);
             putMessage(message);
-            while(t.read()<noteDurations[i]){
-                continue;
-            }
+//            while(t.read()<noteDurations[i]){
+//                continue;
+//            }
+            Thread::wait(noteDurations[i]*1000);
         }
     }
 }
