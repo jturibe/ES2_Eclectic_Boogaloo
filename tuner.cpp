@@ -18,6 +18,7 @@ void tune_parser(std::string melody) {
     int start_of_note = 0;
     int duration;
     int note_num = 0;
+    tuning_mutex.lock();
     while(end_of_note <= (melody_length - 1)){
         char string_element = melody[end_of_note];
         if(string_element > 48 && string_element < 57){
@@ -31,23 +32,30 @@ void tune_parser(std::string melody) {
         end_of_note++;
     }
     melodyLength = note_num;
+    new_tune = true;
+    tuning_mutex.unlock();
 }
 
 void playTune(){
-   // Timer t;
-   // t.start();
+    float noteFrequencies_local[16];
+    float noteDurations_local[16];
+    int melodyLength_local;
     while(1){
-        for(int i = 0; i < melodyLength; i++){
-            //t.reset();
-            PWM_PRD = (1/noteFrequencies[i])*1000000;
+        tuning_mutex.lock();
+        if(new_tune){
+            std::copy(std::begin(noteFrequencies), std::end(noteFrequencies), std::begin(noteFrequencies_local));
+            std::copy(std::begin(noteDurations), std::end(noteDurations), std::begin(noteDurations_local));
+            melodyLength_local = melodyLength;
+            new_tune = false;
+        }
+        tuning_mutex.unlock();
+        for(int i = 0; i < melodyLength_local; i++){
+            PWM_PRD = (1/noteFrequencies_local[i])*1000000;
             MotorPWM.period_us(PWM_PRD);
-            char message[150];
-            sprintf(message, "Set Note: %d, Melody Length: %d, Note Duration: %d\n\r",PWM_PRD, melodyLength, noteDurations[i]);
-            putMessage(message);
-//            while(t.read()<noteDurations[i]){
-//                continue;
-//            }
-            Thread::wait(noteDurations[i]*1000);
+            // char message[150];
+            // sprintf(message, "Set Note: %d, Melody Length: %d, Note Duration: %d\n\r",PWM_PRD, melodyLength_local, noteDurations_local[i]);
+            // putMessage(message);
+            Thread::wait(noteDurations_local[i]*1000);
         }
     }
 }

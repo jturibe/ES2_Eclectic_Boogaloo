@@ -174,7 +174,6 @@ void motorCtrlFn(){
         // Calculate rotation error and set power
         // rotation_error = selectRotations - ((float)motorPosition)/6;
         // pwmcontrol.setRotation(rotation_error);
-        // maxVelocity_mutex.lock();
         // Calculate velocity error and set power
         error_term = (maxVelocity - velocity);
         //MotorPWM.pulsewidth_us(pwmcontrol.setVelocity(error_term));
@@ -193,7 +192,6 @@ void motorCtrlFn(){
 
             iter = 0;
         }
-        // maxVelocity_mutex.unlock();
         iter++;
         old_position = motorPosition;
     }

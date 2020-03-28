@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "motor_control.h"
 #include "tuner.h"
+#include <atomic>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header file containing all declarations of functions and external global   //
@@ -18,24 +19,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 extern volatile float maxVelocity; // Selected VELOCITY by user
-extern Mutex maxVelocity_mutex; // Mutex protecting resource selected VELOCITY
 
 extern volatile uint64_t newKey; // Selected KEY by user
 extern Mutex newKey_mutex; // Mutex protecting resource selected KEY
 
 extern volatile float selectRotations; // Selected ROTATIONS by user
-extern Mutex selectRotations_mutex; // Mutex protecting resource selected ROTATIONS
 
 extern volatile float noteFrequencies[16];
-extern Mutex noteFrequencies_mutex;
 
 extern volatile float noteDurations[16];
-extern Mutex noteDurations_mutex;
 
 extern volatile int melodyLength;
 extern Mutex melodyLength_mutex;
 
 extern Thread tunerThread;
+
+extern bool new_tune;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////

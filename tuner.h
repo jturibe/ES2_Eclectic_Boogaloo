@@ -4,6 +4,7 @@
 #include <vector>
 #include <regex>
 #include <map>
+#include <algorithm>
 #include "messaging.h"
 #include "motor_control.h"
 

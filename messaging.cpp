@@ -29,9 +29,7 @@ Mail<mail_t, 16> mail_box;
 Mail<uint8_t, 24> inCharQ;
 
 // Selected VELOCITY by user
-volatile float maxVelocity = 100;
-// Mutex protecting resource selected VELOCITY
-Mutex maxVelocity_mutex;
+std::atomic<float> maxVelocity = 100;
 
 // Selected KEY by user
 volatile uint64_t newKey;
@@ -39,20 +37,19 @@ volatile uint64_t newKey;
 Mutex newKey_mutex;
 
 // Selected ROTATIONS by user
-volatile float selectRotations;
-// Mutex protecting resource selected ROTATIONS
-Mutex selectRotations_mutex;
+std::atomic<float> selectRotations;
 
 volatile float noteFrequencies[16];
-Mutex noteFrequencies_mutex;
 
 volatile float noteDurations[16];
-Mutex noteDurations_mutex;
 
 volatile int melodyLength;
-Mutex melodyLength_mutex;
 
-bool tune_set = false;
+Mutex tuning_mutex;
+
+bool first_tune = false;
+
+bool new_tune = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// FUNCTIONS /////////////////////////////////////////
@@ -118,9 +115,7 @@ void input_thread(){
 
                 case 'V':{
                     // Set maximum velocity command, of form: V\d{1,3}(\.\d)?
-                    maxVelocity_mutex.lock();
                     sscanf(input.c_str(),"V%f",&maxVelocity);
-                    maxVelocity_mutex.unlock();
                     break;
                 }
 
@@ -128,9 +123,7 @@ void input_thread(){
                     // Set target rotations command, of form: R-?\d{1,4}(\.\d)?
                     float input_rotations;
                     sscanf(input.c_str(), "R%f", &input_rotations);
-                    selectRotations_mutex.lock();
                     selectRotations = ((float)motorPosition)/6 + input_rotations;
-                    selectRotations_mutex.unlock();
                     break;
                 }
 
