@@ -48,9 +48,8 @@ float PWMController::setVelocity(float error_term){
     //Calculate PWM control
     y_s = y_ps + y_is; //+ y_ds
 
-    // Convert power term to valid PWM
+    // Set the lead
     lead = y_s < 0 ? -2:2;
-    y_s = abs(y_s) > PWM_PRD ? PWM_PRD : y_s;
 
     return abs(y_s);
 }
@@ -70,9 +69,6 @@ float PWMController::setRotation(float error_term){
 
     // Calculate PWM control
     y_r = y_pr + y_dr;// + y_ir;
-
-    // Convert power term to valid PWM
-    y_r = abs(y_r) > PWM_PRD ? PWM_PRD : y_r;
 
     // Update value of previous error
     past_rota_err = error_term;

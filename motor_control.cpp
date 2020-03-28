@@ -27,6 +27,7 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 volatile int8_t lead = 2;  //2 for forwards, -2 for backwards
 
 int32_t PWM_PRD = 2000;
+Mutex PWM_PRD_mutex;
 
 // Original and Starting state of the motor, used to implement motor rotation
 int8_t orState = 0;
@@ -208,9 +209,11 @@ void motorCtrlFn(){
 
         power = min(y_s_loc,y_r_loc);
 
+
+        // Convert power term to valid PWM and set the pulsewidth
+        PWM_PRD_mutex.lock();
+        power = power > PWM_PRD ? PWM_PRD : power/2000*PWM_PRD;
         MotorPWM.pulsewidth_us(power);
-
-
 
         //Jumpstarting the rotations to get over 0 input heuristics
         if(selectRotations!=old_selectRotations){
@@ -218,8 +221,9 @@ void motorCtrlFn(){
             pwmcontrol.s_err = rotation_error > 0? 2400 : -3200;
             MotorPWM.pulsewidth_us(PWM_PRD);
             motorControlISR();
-
         }
+        PWM_PRD_mutex.unlock();
+
 
         if(iter == 9){
              // char message[150];
