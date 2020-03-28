@@ -2,6 +2,7 @@
 #include "Timer.h"
 #include <stdio.h>
 
+
 #include "motor_control.h"
 #include "mining_bitcoin.h"
 #include "messaging.h"
@@ -11,8 +12,9 @@ Thread in_comms_thread;
 Thread motorCtrlT(osPriorityHigh,1024);
 
 
-/////////////////////////// Main
+//Main
 int main() {
+
 
 
     Timer t;
@@ -37,9 +39,11 @@ int main() {
             // char key_test_message[100];
             // sprintf(key_test_message, "Using key: %d\n\r",*key);
             // putMessage(key_test_message);
+
             t.reset();
             miner.hash_count = 0;
         }
         miner.hash_count++;
+
     }
 }
