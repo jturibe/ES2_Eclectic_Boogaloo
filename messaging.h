@@ -18,19 +18,20 @@
 //////////////////////////// GLOBAL VARIABLES //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-extern volatile float maxVelocity; // Selected VELOCITY by user
+extern std::atomic<float> maxVelocity; // Selected VELOCITY by user
 
 extern volatile uint64_t newKey; // Selected KEY by user
 extern Mutex newKey_mutex; // Mutex protecting resource selected KEY
 
-extern volatile float selectRotations; // Selected ROTATIONS by user
+extern std::atomic<float> selectRotations; // Selected ROTATIONS by user
 
 extern volatile float noteFrequencies[16];
 
 extern volatile float noteDurations[16];
 
 extern volatile int melodyLength;
-extern Mutex melodyLength_mutex;
+
+extern Mutex tuning_mutex;
 
 extern Thread tunerThread;
 
