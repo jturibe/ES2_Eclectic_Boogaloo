@@ -8,7 +8,7 @@
 
 Thread out_comms_thread;
 Thread in_comms_thread;
-Thread motorCtrlT(osPriorityNormal,1024);
+Thread motorCtrlT(osPriorityHigh,1024);
 
 
 /////////////////////////// Main

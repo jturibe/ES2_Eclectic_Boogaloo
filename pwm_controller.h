@@ -28,14 +28,14 @@ public:
     float y_ir; // Differential ROTATION term
 
     /// VELOCITY CONSTANTS
-    float k_ps = 30; // Proportional VELOCITY constant
-    float k_is = 10; // Integral VELOCITY constant
-    float k_ds = 0.2; // Differential VELOCITY constant
+    float k_ps = 33; // Proportional VELOCITY constant
+    float k_is = 0.15; // Integral VELOCITY constant
+    float k_ds = 0; // Differential VELOCITY constant
 
     /// ROTATION CONSTANTS
-    float k_pr = 9;//Proportional ROTATION constant
+    float k_pr = 8;//Proportional ROTATION constant
     float k_ir = 0; // Integral ROTATION constant
-    float k_dr = 110; // Differential ROTATION constant
+    float k_dr = 55; // Differential ROTATION constant
 
     /// ERROR TERMS
     float s_err; // Cumulative ERROR for speed
@@ -43,7 +43,7 @@ public:
     float past_rota_err; // Previous ROTATION ERROR
 
     /// INTEGRAL LIMIT
-    float y_is_limit = 1750; // Integral limit to prevent overshoot
+    float y_is_limit = 1500; // Integral limit to prevent overshoot
 
     //// FUNCTION DECLARATIONS
     PWMController(); // Class constructor: Initialises terms

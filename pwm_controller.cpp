@@ -26,6 +26,11 @@ PWMController::PWMController(){
     past_rota_err = 0;
 }
 
+//// FUNCTION: return the sign of a variable
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 //// FUNCTION: Compute power for VELOCITY using PID
 float PWMController::setVelocity(float error_term){
     // Calculate the proportional term
@@ -33,9 +38,11 @@ float PWMController::setVelocity(float error_term){
 
     // Calculate the integral term
     s_err += error_term;
+    //limit the error to a maximum
+    s_err = abs(s_err)>y_is_limit/k_is ? sgn(s_err)*y_is_limit/k_is:s_err;
+
     y_is = s_err*k_is;
 
-    y_is = y_is>y_is_limit ? y_is_limit:y_is;
     // y_is = y_is<-y_is_limit ?-y_is_limit:y_is; //
 
     //Calculate PWM control
@@ -53,19 +60,19 @@ float PWMController::setRotation(float error_term){
     // Calculate the proportional term
     y_pr = k_pr*error_term;
 
-    // Calculate the integral term
-    //r_err = abs(error_term)<0.5 ? 0 :r_err + error_term; // cancel error if position is within range
-    //y_ir = abs(r_err)>1200 ? 1220 : r_err*k_ir; //limit y_ir
+    //Calculate the integral term
+    // r_err = abs(error_term)<0.5 ? 0 :r_err + error_term; // cancel error if position is within range
+    // r_err = abs(r_err)>1400/k_ir ? sgn(r_err)*1400/k_ir:r_err;
+    // y_ir = r_err*k_ir; //limit y_ir
 
 
     // Calculate the differential term
     y_dr = k_dr*(error_term - past_rota_err);
 
     // Calculate PWM control
-    y_r = y_pr + y_dr; //+ y_ir;
+    y_r = y_pr + y_dr;// + y_ir;
 
     // Convert power term to valid PWM
-    lead = y_r < 0 ? -2:2;
     y_r = abs(y_r) > PWM_PRD ? PWM_PRD : y_r;
 
     // Update value of previous error
