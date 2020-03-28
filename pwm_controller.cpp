@@ -21,9 +21,14 @@ PWMController::PWMController(){
     y_dr = 0;
 
     // Initialise ERROR TERMS
-    c_err = 0;
+    s_err = 0;
     r_err = 0;
     past_rota_err = 0;
+}
+
+//// FUNCTION: return the sign of a variable
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
 }
 
 //// FUNCTION: Compute power for VELOCITY using PID
@@ -32,10 +37,12 @@ float PWMController::setVelocity(float error_term){
     y_ps = k_ps*error_term;
 
     // Calculate the integral term
-    c_err += error_term;
-    y_is = c_err*k_is;
+    s_err += error_term;
+    //limit the error to a maximum
+    s_err = abs(s_err)>y_is_limit/k_is ? sgn(s_err)*y_is_limit/k_is:s_err;
 
-    y_is = y_is>y_is_limit ? y_is_limit:y_is;
+    y_is = s_err*k_is;
+
     // y_is = y_is<-y_is_limit ?-y_is_limit:y_is; //
 
     //Calculate PWM control
@@ -53,19 +60,18 @@ float PWMController::setRotation(float error_term){
     // Calculate the proportional term
     y_pr = k_pr*error_term;
 
-    //Calculate integral term
-    r_err += error_term;
-    y_ir = r_err*k_ir;
-
+    //Calculate the integral term
+    // r_err = abs(error_term)<0.5 ? 0 :r_err + error_term; // cancel error if position is within range
+    // r_err = abs(r_err)>1400/k_ir ? sgn(r_err)*1400/k_ir:r_err;
+    // y_ir = r_err*k_ir; //limit y_ir
 
     // Calculate the differential term
     y_dr = k_dr*(error_term - past_rota_err);
 
     // Calculate PWM control
-    y_r = y_pr + y_dr +y_ir;
+    y_r = y_pr + y_dr;// + y_ir;
 
     // Convert power term to valid PWM
-    lead = y_r < 0 ? -2:2;
     y_r = abs(y_r) > PWM_PRD ? PWM_PRD : y_r;
 
     // Update value of previous error
@@ -82,12 +88,12 @@ float PWMController::pwmController(){
     selectRotations_mutex.lock();
     float rotation_error = selectRotations-((float)motorPosition)/6;
     selectRotations_mutex.unlock();
-    float y_s = this->setVelocity(velocity_error);
-    float y_r = this->setRotation(rotation_error);
+    float y_s_loc = setVelocity(velocity_error);
+    float y_r_loc = setRotation(rotation_error);
     if(velocity < 0){
-        power = max(y_s,y_r);
+        power = max(y_s_loc,y_r_loc);
     } else {
-        power = min(y_s,y_r);
+        power = min(y_s_loc,y_r_loc);
     }
     return power;
 }

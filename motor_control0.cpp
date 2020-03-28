@@ -25,8 +25,7 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 
 // Phase lead to make motor spin
 volatile int8_t lead = 2;  //2 for forwards, -2 for backwards
-
-int32_t PWM_PRD = 2000;
+const int32_t PWM_PRD = 2000;
 
 // Original and Starting state of the motor, used to implement motor rotation
 int8_t orState = 0;
@@ -193,6 +192,7 @@ void motorCtrlFn(){
         // Calculate rotation error and set power
         // rotation_error = selectRotations - ((float)motorPosition)/6;
         // pwmcontrol.setRotation(rotation_error);
+        // maxVelocity_mutex.lock();
         // Calculate velocity error and set power
         // error_term = (maxVelocity - velocity);
         // MotorPWM.pulsewidth_us(pwmcontrol.setVelocity(error_term));
@@ -208,18 +208,18 @@ void motorCtrlFn(){
 
 
 
-        y_s_loc = pwmcontrol.setVelocity(velocity_error);
         y_r_loc = pwmcontrol.setRotation(rotation_error);
+        y_s_loc = pwmcontrol.setVelocity(velocity_error);
 
         power = min(y_s_loc,y_r_loc);
 
-        MotorPWM.pulsewidth_us(power);
+        MotorPWM.pulsewidth_us(min(y_s_loc,y_r_loc));
 
 
 
         //Jumpstarting the rotations to get over 0 input heuristics
         if(selectRotations!=old_selectRotations){
-            // Set the velocity
+            // Set the velocity error
             pwmcontrol.s_err = rotation_error > 0? 2400 : -3200;
             MotorPWM.pulsewidth_us(PWM_PRD);
             motorControlISR();
@@ -228,9 +228,14 @@ void motorCtrlFn(){
 
         if(iter == 9){
              char message[150];
-             // // sprintf(message,"MaxVelocity: %f, Motor Velocity: %f, Motor Power: %f\n\r",maxVelocity,velocity,pwmcontrol.y_s);
-             sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Set power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_r);
-             putMessage(message);
+            sprintf(message, "Motor Velocity: %f, Motor Power: %f, Proportional Term: %f, Integral term %f, Lead: %d\n\r", velocity, power,  pwmcontrol.y_ps, pwmcontrol.y_is, lead);
+            //sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Prop pow: %f, Diff pow: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_pr,pwmcontrol.y_dr);
+            // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
+            putMessage(message);
+            // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
+            // putMessage(message);
+            // sprintf(message, "Motor Velocity: %f, Position position_change: %d, Time: %f\n\r",velocity,position_change,time);
+            // putMessage(message);
             // char message2[150];
             // sprintf(message2, "Position error: %f, Proportional term: %f, Full term: %f, Lead: %d\n\r",rotation_error, pwmcontrol.y_pr, pwmcontrol.y_r, lead);
             // putMessage(message2);
@@ -240,6 +245,7 @@ void motorCtrlFn(){
 
             iter = 0;
         }
+        // maxVelocity_mutex.unlock();
         iter++;
         old_position = motorPosition;
         old_selectRotations = selectRotations;
