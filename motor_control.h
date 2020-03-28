@@ -79,6 +79,7 @@ extern volatile int8_t lead; //2 for forwards, -2 for backwards
 
 // Set the Pulse Width Modulation Period to 2000 us (2 ms)
 extern int32_t PWM_PRD;
+extern Mutex PWM_PRD_mutex;
 
 // Pulse width modulator for motor output
 extern PwmOut MotorPWM;

@@ -205,7 +205,7 @@ void motorCtrlFn(){
 
 
         y_s_loc = pwmcontrol.setVelocity(velocity_error);
-        y_r_loc = pwmcontrol.setRotation(rotation_error);
+        y_r_loc = pwmcontrol.setRotation(rotation_error, time);
 
         power = min(y_s_loc,y_r_loc);
 

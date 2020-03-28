@@ -55,7 +55,7 @@ float PWMController::setVelocity(float error_term){
 }
 
 //// FUNCTION: Compute power for ROTATION using PID
-float PWMController::setRotation(float error_term){
+float PWMController::setRotation(float error_term, float time){
     // Calculate the proportional term
     y_pr = k_pr*error_term;
 
@@ -65,7 +65,7 @@ float PWMController::setRotation(float error_term){
     // y_ir = r_err*k_ir; //limit y_ir
 
     // Calculate the differential term
-    y_dr = k_dr*(error_term - past_rota_err);
+    y_dr = k_dr*(error_term - past_rota_err)/time;
 
     // Calculate PWM control
     y_r = y_pr + y_dr;// + y_ir;
@@ -81,7 +81,7 @@ float PWMController::pwmController(){
     float velocity_error = maxVelocity-velocity;
     float rotation_error = selectRotations-((float)motorPosition)/6;
     float y_s_loc = setVelocity(velocity_error);
-    float y_r_loc = setRotation(rotation_error);
+    float y_r_loc = setRotation(rotation_error, 1);
     if(velocity < 0){
         power = max(y_s_loc,y_r_loc);
     } else {
