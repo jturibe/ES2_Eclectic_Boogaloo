@@ -82,12 +82,8 @@ float PWMController::setRotation(float error_term){
 
 float PWMController::pwmController(){
     float power;
-    maxVelocity_mutex.lock();
     float velocity_error = maxVelocity-velocity;
-    maxVelocity_mutex.unlock();
-    selectRotations_mutex.lock();
     float rotation_error = selectRotations-((float)motorPosition)/6;
-    selectRotations_mutex.unlock();
     float y_s_loc = setVelocity(velocity_error);
     float y_r_loc = setRotation(rotation_error);
     if(velocity < 0){

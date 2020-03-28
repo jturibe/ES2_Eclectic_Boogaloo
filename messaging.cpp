@@ -29,7 +29,7 @@ Mail<mail_t, 16> mail_box;
 Mail<uint8_t, 24> inCharQ;
 
 // Selected VELOCITY by user
-std::atomic<float> maxVelocity = 100;
+std::atomic<float> maxVelocity = {100};
 
 // Selected KEY by user
 volatile uint64_t newKey;
@@ -131,8 +131,8 @@ void input_thread(){
                 // Set tune, of form: T([A-G][#^]?[1-8]){1,16} (where # and ^ are characters)
                     std::string tune_string = input.substr(1, input.length() - 1);
                     tune_parser(tune_string);
-                    if(!tune_set){
-                        tune_set = true;
+                    if(!first_tune){
+                        first_tune = true;
                         tunerThread.start(playTune);
                     }
                     break;
