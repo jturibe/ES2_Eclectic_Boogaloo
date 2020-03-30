@@ -5,6 +5,8 @@
 #include "Timer.h"
 #include "pwm_controller.h"
 #include "messaging.h"
+#include <atomic>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header file containing all declarations of pins, external global variables //
@@ -66,7 +68,7 @@ State   L1  L2  L3
 ////////////////////////////////////////////////////////////////////////////////
 
 // Motor position in amount of states, to calculate rotations must divide by 6
-extern volatile int64_t motorPosition;
+extern std::atomic<int32_t> motorPosition;
 
 // PWM torque - currently unused
 extern volatile uint64_t pwmTorque;
