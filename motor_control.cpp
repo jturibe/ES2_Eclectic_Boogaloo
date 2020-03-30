@@ -26,8 +26,7 @@ const int8_t stateMap[] = {0x07,0x05,0x03,0x04,0x01,0x00,0x02,0x07};
 // Phase lead to make motor spin
 volatile int8_t lead = 2;  //2 for forwards, -2 for backwards
 
-int32_t PWM_PRD = 2000;
-Mutex PWM_PRD_mutex;
+std::atomic<int32_t> PWM_PRD = {2000};
 
 // Original and Starting state of the motor, used to implement motor rotation
 int8_t orState = 0;
@@ -222,9 +221,7 @@ void motorCtrlFn(){
         float power = (velocity < 0)? std::max(y_s_loc,y_r_loc) : std::min(y_s_loc,y_r_loc);
 
 
-        PWM_PRD_mutex.lock();
         int local_PWM_PDR = PWM_PRD;
-        PWM_PRD_mutex.unlock();
 
         //Jumpstarting the rotations to get over 0 input heuristics
         if(selectRotations!=old_selectRotations){
@@ -232,7 +229,7 @@ void motorCtrlFn(){
             pwmcontrol.s_err = rotation_error > 0? 2400 : -3200;
             MotorPWM.write(1);
             motorControlISR();
-        }else if((local_motorPosition == old_position) && (abs(rotation_error)>2)){
+        }else if((local_motorPosition == old_position) && (abs(rotation_error)>0.8)){
             //Run the motor in case power is too low
             MotorPWM.write(1);
             motorControlISR();
@@ -245,23 +242,23 @@ void motorCtrlFn(){
 
 
         // if(iter == 9){
-             // char message[150];
-            // sprintf(message, "Motor Velocity: %f, Motor Power: %f, Proportional Term: %f, Integral term %f, Lead: %d\n\r", velocity, power,  pwmcontrol.y_ps, pwmcontrol.y_is, lead);
-            //sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Prop pow: %f, Diff pow: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_pr,pwmcontrol.y_dr);
-            // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
-            // putMessage(message);
-            // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
-            // putMessage(message);
-            // sprintf(message, "Motor Velocity: %f, Position position_change: %d, Time: %f\n\r",velocity,position_change,time);
-            // putMessage(message);
-            char message2[150];
-            sprintf(message2, "Motor Velocity: %f, Position error: %f, Proportional term: %f, Full term: %f, Lead: %d\n\r",velocity, rotation_error, pwmcontrol.y_pr, pwmcontrol.y_r, lead);
-            putMessage(message2);
-            // char message3[50];
-            // sprintf(message3, "PWM: %f\n\r",MotorPWM.read());
-            // putMessage(message3);
-
-            // iter = 0;
+        //      // char message[150];
+        //     // sprintf(message, "Motor Velocity: %f, Motor Power: %f, Proportional Term: %f, Integral term %f, Lead: %d\n\r", velocity, power,  pwmcontrol.y_ps, pwmcontrol.y_is, lead);
+        //     //sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Prop pow: %f, Diff pow: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_pr,pwmcontrol.y_dr);
+        //     // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
+        //     // putMessage(message);
+        //     // sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, y_s: %f, power: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_s,power);
+        //     // putMessage(message);
+        //     // sprintf(message, "Motor Velocity: %f, Position position_change: %d, Time: %f\n\r",velocity,position_change,time);
+        //     // putMessage(message);
+        //     char message2[150];
+        //     sprintf(message2, "Motor Velocity: %f, Position error: %f, Proportional term: %f, Full term: %f, Lead: %d\n\r",velocity, rotation_error, pwmcontrol.y_pr, pwmcontrol.y_r, lead);
+        //     putMessage(message2);
+        //     // char message3[50];
+        //     // sprintf(message3, "PWM: %f\n\r",MotorPWM.read());
+        //     // putMessage(message3);
+        //
+        //     iter = 0;
         // }
         // iter++;
         old_position = local_motorPosition;

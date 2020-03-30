@@ -28,12 +28,15 @@ int main() {
     out_comms_thread.start(output_thread);
     in_comms_thread.start(input_thread);
     motorCtrlT.start(motorCtrlFn);
-    // t.start();
+    t.start();
     while (1) {
-        miner.compute_hash();
+        if(miner.hash_count<5000){
+            miner.compute_hash();
+            miner.hash_count++;
+        }
         if (t.read() >= 1){
             // char message[100];
-            // sprintf(message, "Current Computation Rate: %d Hashes per second\n\r",hash_count);
+            // sprintf(message, "Current Computation Rate: %d Hashes per second\n\r",miner.hash_count);
             // putMessage(message);
             // char key_test_message[100];
             // sprintf(key_test_message, "Using key: %d\n\r",*key);
@@ -41,6 +44,5 @@ int main() {
             t.reset();
             miner.hash_count = 0;
         }
-        miner.hash_count++;
     }
 }
