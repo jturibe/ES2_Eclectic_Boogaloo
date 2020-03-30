@@ -210,7 +210,7 @@ void motorCtrlFn(){
         y_s_loc = pwmcontrol.setVelocity(velocity_error);
 
         // Set the lead
-        if(rotation_error>0.5){
+        if(abs(rotation_error)>0.5){
             lead = y_s_loc < 0 ? -2:2;
         }else{
             //Set the lead to 0 to stop oscilations

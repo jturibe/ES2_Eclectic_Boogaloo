@@ -129,8 +129,7 @@ void input_thread(){
 
                 case 'T':{
                 // Set tune, of form: T([A-G][#^]?[1-8]){1,16} (where # and ^ are characters)
-                    std::string tune_string = input.substr(1, input.length() - 1);
-                    tune_parser(tune_string);
+                    tune_parser(input);
                     if(!first_tune){
                         first_tune = true;
                         tunerThread.start(playTune);

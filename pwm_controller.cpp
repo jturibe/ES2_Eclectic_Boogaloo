@@ -60,6 +60,12 @@ float PWMController::setRotation(float error_term, float time){
     // r_err = abs(r_err)>1400/k_ir ? sgn(r_err)*1400/k_ir:r_err;
     // y_ir = r_err*k_ir; //limit y_ir
 
+    if(abs(error_term)<5){
+        k_dr = 0;
+    }else{
+        k_dr = 17;
+    }
+
     // Calculate the differential term
     y_dr = k_dr*(error_term - past_rota_err)/time;
 
@@ -68,6 +74,7 @@ float PWMController::setRotation(float error_term, float time){
 
     // Update value of previous error
     past_rota_err = error_term;
+
 
     return y_r;
 }

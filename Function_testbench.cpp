@@ -186,7 +186,7 @@ BitcoinMiner bm;
 ///////////////////////////////////////////////////////////////////////////////
 ////////////////////// Bitcoin mining task ////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
+int hash_count = 0;
 void bitcoinMiningTask(){
     newKey_mutex.lock();
     *(bm.key) = newKey;
@@ -277,7 +277,7 @@ public:
     float y_dr; // Differential ROTATION term
     float y_ir; // Differential ROTATION term
 
-    /// VELOCITY CONSTANTS
+    /// VELOCITY CONSTANTSbitc
     float k_ps = 33; // Proportional VELOCITY constant
     float k_is = 0.17; // Integral VELOCITY constant
     float k_ds = 0; // Differential VELOCITY constant
@@ -481,15 +481,15 @@ void serialISRTask(){
 ///////////////////////////////////////////////////////////////////////////////
 
 void tune_parser(std::string melody) {
-    int melody_length = melody.size();
+    int melody_length = melody.size() - 2;
     // Go through each character of the string and separate on numbers
     // Put each substring in a vector
-    int end_of_note = 0;
-    int start_of_note = 0;
+    int end_of_note = 1;
+    int start_of_note = 1;
     int duration;
     int note_num = 0;
     tuning_mutex.lock();
-    while(end_of_note <= (melody_length - 1)){
+    while(end_of_note <= melody_length){
         char string_element = melody[end_of_note];
         if(string_element > 48 && string_element < 57){
             std::string note = melody.substr(start_of_note,end_of_note-start_of_note);
@@ -507,6 +507,7 @@ void tune_parser(std::string melody) {
 }
 
 std::string input_for_thread = "TA#8G#8D#8C#8A#8G#8D#8C#8A#8G#8D#8C#8A#8G#8D#8C#8";
+
 void input_threadTask(){
     //pc.attach(&serialISRTask);
     // input message
@@ -541,8 +542,7 @@ void input_threadTask(){
 
             case 'T':{
             // Set tune, of form: T([A-G][#^]?[1-8]){1,16} (where # and ^ are characters)
-                std::string tune_string = input_for_thread.substr(1, input_for_thread.length() - 1);
-                tune_parser(tune_string);
+                tune_parser(input_for_thread);
                 if(!first_tune){
                     first_tune = true;
                 //    tunerThread.start(playTune);
@@ -655,61 +655,61 @@ void playTuneTask(){
 /////////////////////////// Main
 int main() {
     Timer timer;
-    printf("Timing Bitcoin Mining Task...\n\r");
+//    printf("Timing Bitcoin Mining Task...\n\r");
     timer.start();
-    for(int i = 0; i < 5000; i++){
-        bitcoinMiningTask();
-    }
+    // for(int i = 0; i < 5000; i++){
+    //     bitcoinMiningTask();
+    // }
 
     float bitcoinTime = timer.read();
     printf("Bitcoin Mining Task time recorded.\n\r");
-
-    printf("Timing Running The Motor Task...\n\r");
-    MotorPWM.period_us(PWM_PRD);
-    MotorPWM.pulsewidth_us(PWM_PRD);
-    orState = motorHome();
-    timer.reset();
-    for(int i = 0; i < 5000; i++){
-        motorControlISRTask();
-    }
-
-    float motorRunTime = timer.read();
-    printf("Running The Motor Task time recorded.\n\r");
-
-    printf("Timing Controlling Motor velocity and position Task...\n\r");
-    timer.reset();
-    for(int i = 0; i < 5000; i++){
-        motorCtrlFnTask();
-    }
-
-    float motorControlTime = timer.read();
-    printf("Controlling Motor velocity and position Task time recorded.\n\r");
-
-    printf("Timing Output to Serial Task...\n\r");
-    float outputSerialTime = 0;
-    for(int i = 0; i < 5000; i++){
-        char message[100];
-        sprintf(message, "Successful nonce, Hex rep: 0x%X\n\r", *(bm.nonce));
-        putMessage(message);
-        timer.reset();
-        output_threadTask();
-        outputSerialTime += timer.read();
-    }
-
-    printf("Output to Serial Task time recorded.\n\r");
-
-    printf("Timing Serial Input ISR Task...\n\r");
-    float SerialInputISRTime = 0;
-    for(int i = 0; i < 5000; i++){
-        timer.reset();
-        serialISRTask();
-        SerialInputISRTime += timer.read();
-        osEvent newEvent = inCharQ.get();
-        uint8_t* newChar = (uint8_t*)newEvent.value.p;
-        inCharQ.free(newChar);
-    }
-
-    printf("Serial Input ISR Task time recorded.\n\r");
+    //
+    // printf("Timing Running The Motor Task...\n\r");
+    // MotorPWM.period_us(PWM_PRD);
+    // MotorPWM.pulsewidth_us(PWM_PRD);
+    // orState = motorHome();
+    // timer.reset();
+    // for(int i = 0; i < 5000; i++){
+    //     motorControlISRTask();
+    // }
+    //
+    // float motorRunTime = timer.read();
+    // printf("Running The Motor Task time recorded.\n\r");
+    //
+    // printf("Timing Controlling Motor velocity and position Task...\n\r");
+    // timer.reset();
+    // for(int i = 0; i < 5000; i++){
+    //     motorCtrlFnTask();
+    // }
+    //
+    // float motorControlTime = timer.read();
+    // printf("Controlling Motor velocity and position Task time recorded.\n\r");
+    //
+    // printf("Timing Output to Serial Task...\n\r");
+    // float outputSerialTime = 0;
+    // for(int i = 0; i < 5000; i++){
+    //     char message[100];
+    //     sprintf(message, "Successful nonce, Hex rep: 0x%X\n\r", *(bm.nonce));
+    //     putMessage(message);
+    //     timer.reset();
+    //     output_threadTask();
+    //     outputSerialTime += timer.read();
+    // }
+    //
+    // printf("Output to Serial Task time recorded.\n\r");
+    //
+    // printf("Timing Serial Input ISR Task...\n\r");
+    // float SerialInputISRTime = 0;
+    // for(int i = 0; i < 5000; i++){
+    //     timer.reset();
+    //     serialISRTask();
+    //     SerialInputISRTime += timer.read();
+    //     osEvent newEvent = inCharQ.get();
+    //     uint8_t* newChar = (uint8_t*)newEvent.value.p;
+    //     inCharQ.free(newChar);
+    // }
+    //
+    // printf("Serial Input ISR Task time recorded.\n\r");
 
     printf("Timing Input Decoder Task...\n\r");
     float InputdecodingTime = 0;
@@ -721,35 +721,35 @@ int main() {
         input_for_thread = "TA#8G#8D#8C#8A#8G#8D#8C#8A#8G#8D#8C#8A#8G#8D#8C#8";
     }
 
-    printf("Input Decoder Task time recorded.\n\r");
-
-    printf("Timing Playing Tune Task...\n\r");
-    timer.reset();
-    for(int i = 0; i < 5000; i++){
-        playTuneTask();
-    }
-
-    float PlayingtuneTime = timer.read();
-    printf("Playing Tune Task time recorded.\n\r");
-
-    printf("Bitcoin mining time: %f\n\r", bitcoinTime/5000);
-    printf("Running the motor time: %f\n\r", motorRunTime/5000);
-    printf("Controlling motor vel & pos time: %f\n\r", motorControlTime/5000);
-    printf("Output to serial Time: %f\n\r", outputSerialTime/5000);
-    printf("Serial Input ISR Time: %f\n\r", SerialInputISRTime/5000);
+    // printf("Input Decoder Task time recorded.\n\r");
+    //
+    // printf("Timing Playing Tune Task...\n\r");
+    // timer.reset();
+    // for(int i = 0; i < 5000; i++){
+    //     playTuneTask();
+    // }
+    //
+    // float PlayingtuneTime = timer.read();
+    // printf("Playing Tune Task time recorded.\n\r");
+    //
+     printf("Bitcoin mining time: %f\n\r", bitcoinTime);
+    // printf("Running the motor time: %f\n\r", motorRunTime/5000);
+    // printf("Controlling motor vel & pos time: %f\n\r", motorControlTime/5000);
+    // printf("Output to serial Time: %f\n\r", outputSerialTime/5000);
+    // printf("Serial Input ISR Time: %f\n\r", SerialInputISRTime/5000);
     printf("Input decoder Time: %f\n\r", InputdecodingTime/5000);
-    printf("Playing a tune time: %f\n\r", PlayingtuneTime/5000);
-
-
-    printf("FINDING MINIMUM EXECUTION TIME OF INPUT DECODING THREAD\n\r");
-    float MinimumInputdecodingTime = 0;
-    for(int i = 0; i < 5000; i++){
-        putCharacter('V');
-        timer.reset();
-        MINIMUM_input_threadTask();
-        MinimumInputdecodingTime += timer.read();
-        minimum_input_for_thread = "";
-    }
-
-    printf("MINIMUM Input decoder Time: %f\n\r", MinimumInputdecodingTime/5000);
+    // printf("Playing a tune time: %f\n\r", PlayingtuneTime/5000);
+    //
+    //
+    // printf("FINDING MINIMUM EXECUTION TIME OF INPUT DECODING THREAD\n\r");
+    // float MinimumInputdecodingTime = 0;
+    // for(int i = 0; i < 5000; i++){
+    //     putCharacter('V');
+    //     timer.reset();
+    //     MINIMUM_input_threadTask();
+    //     MinimumInputdecodingTime += timer.read();
+    //     minimum_input_for_thread = "";
+    // }
+    //
+    // printf("MINIMUM Input decoder Time: %f\n\r", MinimumInputdecodingTime/5000);
 }
