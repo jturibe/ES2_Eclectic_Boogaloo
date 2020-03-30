@@ -53,7 +53,7 @@ void playTune(){
             PWM_PRD_mutex.lock();
             PWM_PRD = (1/noteFrequencies_local[i])*1000000;
             MotorPWM.period_us(PWM_PRD);
-            PWM_PRD_mutex.lock();
+            PWM_PRD_mutex.unlock();
             // char message[150];
             // sprintf(message, "Set Note: %d, Melody Length: %d, Note Duration: %d\n\r",PWM_PRD, melodyLength_local, noteDurations_local[i]);
             // putMessage(message);

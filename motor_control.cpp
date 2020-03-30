@@ -58,7 +58,7 @@ DigitalOut led1(LED1);
 volatile uint64_t pwmTorque;
 
 // Motor position in amount of states, to calculate rotations must divide by 6
-volatile int64_t motorPosition = 0;
+std::atomic<int32_t> motorPosition = {0};
 
 volatile float velocity;
 
@@ -69,10 +69,6 @@ PWMController pwmcontrol;
 //////////////////////////// FUNCTIONS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-//// FUNCTION template: finds the sign of a variable
-template <typename T> int sgnMC(T val) {
-    return (T(0) < val) - (val < T(0));
-}
 
 
 //// FUNCTION: Set photointerrupter pins for calling motorControlISR
@@ -163,69 +159,92 @@ void motorCtrlTick(){
 //// Part of motor control thread: motorCtrlT
 void motorCtrlFn(){
     // Initialise required variables
-    int64_t old_position = motorPosition;
+    int32_t old_position = motorPosition;
     Ticker motorCtrlTicker;
     Timer timer;
-    float mult;
-    int64_t position_change;
+    float position_change;
     float velocity;
     float rotation_error;
     float error_term;
-    int iter = 0;
-    float power;
+    // int iter = 0;
     // Set ticker to call motorCtrlTick every 100 ms
     motorCtrlTicker.attach_us(&motorCtrlTick,100000);
     timer.start();
     float y_s_loc;
     float y_r_loc;
-
-
-
+    float local_motorPosition;
     float old_selectRotations = 0.0;
+
+
+
+
     while(1){
         // Stall thread till signal 0x1 is received. Runs while loop every 100ms
         motorCtrlT.signal_wait(0x1);
-        // Calculate actual current velocity
-        position_change = motorPosition - old_position;
+
+        //fetch the motor position
+        local_motorPosition = motorPosition;
+
+        //fetch the time
         float time = timer.read();
-        velocity = position_change/timer/6;
+
+        //fetch the maxVelocity
+        int32_t local_maxVelocity = maxVelocity;
+
+        // Calculate current velocity
+        position_change = local_motorPosition - old_position;
+        velocity = position_change/time/6;
         // Reset timer to measure correct period between motor position readings
         timer.reset();
-        // Calculate rotation error and set power
-        // rotation_error = selectRotations - ((float)motorPosition)/6;
-        // pwmcontrol.setRotation(rotation_error);
-        // Calculate velocity error and set power
-        // error_term = (maxVelocity - velocity);
-        // MotorPWM.pulsewidth_us(pwmcontrol.setVelocity(error_term));
-        // MotorPWM.pulsewidth_us(pwmcontrol.setRotation(selectRotations-((float)motorPosition)/6));
 
-        float rotation_error = selectRotations-((float)motorPosition)/6;
+        // Calculate rotation error and find power
+        float rotation_error = selectRotations-(local_motorPosition)/6;
+        y_r_loc = pwmcontrol.setRotation(rotation_error, time);
 
-        float velocity_error = maxVelocity*sgnMC(rotation_error)-velocity;
+        //Find the sign
+        int sign = (y_r_loc < 0)? -1: 1;
 
 
+
+        // Calculate velocity error and find power
+        float velocity_error = local_maxVelocity*sign - velocity;
         y_s_loc = pwmcontrol.setVelocity(velocity_error);
-        y_r_loc = pwmcontrol.setRotation(rotation_error);
 
-        power = min(y_s_loc,y_r_loc);
+        // Set the lead
+        if(rotation_error>0.5){
+            lead = y_s_loc < 0 ? -2:2;
+        }else{
+            //Set the lead to 0 to stop oscilations
+            lead = 0;
+        }
+
+        // find the power to be provided for PWMOut
+        float power = (velocity < 0)? std::max(y_s_loc,y_r_loc) : std::min(y_s_loc,y_r_loc);
 
 
-        // Convert power term to valid PWM and set the pulsewidth
         PWM_PRD_mutex.lock();
-        power = power > PWM_PRD ? PWM_PRD : power/2000*PWM_PRD;
-        MotorPWM.pulsewidth_us(power);
+        int local_PWM_PDR = PWM_PRD;
+        PWM_PRD_mutex.unlock();
 
         //Jumpstarting the rotations to get over 0 input heuristics
         if(selectRotations!=old_selectRotations){
-            // Set the velocity
+            // Change error term in case of motor fault (blocking), also giving it a kick start
             pwmcontrol.s_err = rotation_error > 0? 2400 : -3200;
-            MotorPWM.pulsewidth_us(PWM_PRD);
+            MotorPWM.write(1);
+            motorControlISR();
+        }else if((local_motorPosition == old_position) && (abs(rotation_error)>2)){
+            //Run the motor in case power is too low
+            MotorPWM.write(1);
             motorControlISR();
         }
-        PWM_PRD_mutex.unlock();
+        else{
+            // Convert power term to valid PWM and set the pulsewidth
+            power = abs(power) > local_PWM_PDR ? local_PWM_PDR : abs(power)/2000*local_PWM_PDR;
+            MotorPWM.write(power/local_PWM_PDR);
+        }
 
 
-        if(iter == 9){
+        // if(iter == 9){
              // char message[150];
             // sprintf(message, "Motor Velocity: %f, Motor Power: %f, Proportional Term: %f, Integral term %f, Lead: %d\n\r", velocity, power,  pwmcontrol.y_ps, pwmcontrol.y_is, lead);
             //sprintf(message, "Motor Velocity: %f, Motor Position: %f, Selected Position: %f, Prop pow: %f, Diff pow: %f\n\r",velocity,((float)motorPosition)/6,selectRotations,pwmcontrol.y_pr,pwmcontrol.y_dr);
@@ -242,10 +261,10 @@ void motorCtrlFn(){
             // sprintf(message3, "PWM: %f\n\r",MotorPWM.read());
             // putMessage(message3);
 
-            iter = 0;
-        }
-        iter++;
-        old_position = motorPosition;
+            // iter = 0;
+        // }
+        // iter++;
+        old_position = local_motorPosition;
         old_selectRotations = selectRotations;
 
     }

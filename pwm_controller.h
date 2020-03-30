@@ -29,13 +29,13 @@ public:
 
     /// VELOCITY CONSTANTS
     float k_ps = 33; // Proportional VELOCITY constant
-    float k_is = 0.15; // Integral VELOCITY constant
+    float k_is = 0.17; // Integral VELOCITY constant
     float k_ds = 0; // Differential VELOCITY constant
 
     /// ROTATION CONSTANTS
-    float k_pr = 8;//Proportional ROTATION constant
+    float k_pr = 15;//Proportional ROTATION constant
     float k_ir = 0; // Integral ROTATION constant
-    float k_dr = 55; // Differential ROTATION constant
+    float k_dr = 17; // Differential ROTATION constant
 
     /// ERROR TERMS
     float s_err; // Cumulative ERROR for speed
@@ -48,7 +48,7 @@ public:
     //// FUNCTION DECLARATIONS
     PWMController(); // Class constructor: Initialises terms
     float setVelocity(float error_term); // Compute power for VELOCITY using PID
-    float setRotation(float error_term); // Compute power for ROTATION using PID
+    float setRotation(float error_term, float time); // Compute power for ROTATION using PID
     float pwmController();
 
 };
